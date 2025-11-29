@@ -1,7 +1,17 @@
+这是为您更新后的 **DevSpec v3.1** 需求文档。
+
+**主要变更点：**
+1.  在 **M1: 知识图谱引擎** 中增加了 **“全景视图 (Global Product Map)”** 的功能定义。
+2.  引入了 `product.yaml` 根节点概念。
+3.  增加了 `tree` (ASCII树) 和 `map` (Mermaid拓扑) 两个可视化 CLI 命令。
+4.  在 **M2: 上下文装配器** 中补充了全景摘要的注入逻辑。
+
+---
+
 # DevSpec：AI原生开发协航系统
 
 > **Product Requirements Document (PRD)**  
-> Version 3.0 Final | 代号：Ouroboros (衔尾蛇)
+> Version 3.1 Final | 代号：Ouroboros (衔尾蛇) | **新增：全景视图**
 
 ---
 
@@ -121,7 +131,7 @@ DevSpec 是专为"超级个体"设计的 **串行会话式智能结对编程环�
 
 ```
 DevSpec
-├── M1: 知识图谱引擎 (SpecIndex)     ← P0 必须
+├── M1: 知识图谱引擎 (SpecIndex)     ← P0 必须 (含全景视图)
 ├── M2: 上下文装配器 (Context)       ← P0 必须
 ├── M3: 会话管理器 (Session)         ← P1 重要
 ├── M4: 质量卫士 (Guard)             ← P2 可选
@@ -138,8 +148,21 @@ DevSpec
 |------|------|
 | 双模态存储 | YAML（Git管理）+ SQLite（运行时缓存） |
 | 三层索引 | L1概念层、L2结构层、L3实现层 |
+| **全景视图** | **(新增)** 提供产品上帝视角，防止盲人摸象 |
 | 自动扫描 | Tree-sitter扫描代码，自动更新L3 |
 | 依赖查询 | 节点关系、影响分析 |
+
+#### 全景视图 (Global Product Map) **[新增]**
+
+为了让用户和 AI 建立全局心智模型，需提供宏观视角。
+
+1.  **产品根节点 (Root)**：
+    *   隐式存在，由 `.specindex/product.yaml` 定义。
+    *   包含：产品名称、版本、核心 Domain 列表。
+
+2.  **可视化能力**：
+    *   **ASCII Tree**：类似 `tree` 命令，展示功能层级与完成度。
+    *   **Mermaid Map**：生成拓扑图代码，展示模块依赖关系。
 
 #### 分层自动化
 
@@ -149,24 +172,17 @@ DevSpec
 | **L2** | 半自动 | 代码提取+人工确认 |
 | **L1** | 人工 | AI建议，人工定义 |
 
-#### 节点类型（简化版）
+#### 节点类型
 
 ```yaml
-# 6种核心节点
+# 核心节点
+Product:       产品根定义 (新增)
 Feature:       功能定义（L1）
 API:           接口契约（L2）
 Component:     组件定义（L2）
 DataModel:     数据模型（L2）
 Function:      函数摘要（L3，自动生成）
 Substrate:     基质规范（全局）
-```
-
-#### 边类型（简化版）
-
-```yaml
-# 2种边 + reason字段
-HARD: 强依赖（必须存在）
-SOFT: 弱关联（可选）
 ```
 
 #### CLI命令
@@ -176,8 +192,10 @@ devspec init              # 初始化 .specindex 目录
 devspec init --scan       # 初始化 + 扫描现有代码生成L3
 devspec scan              # 增量扫描代码更新L3
 devspec query <node_id>   # 查询节点
-devspec deps <node_id>    # 查询依赖
-devspec impact <node_id>  # 影响分析
+
+# 新增可视化命令
+devspec tree              # 显示功能状态树 (ASCII)
+devspec map --format mermaid  # 生成架构拓扑图代码
 ```
 
 ---
@@ -189,6 +207,7 @@ devspec impact <node_id>  # 影响分析
 | 能力 | 说明 |
 |------|------|
 | 关注气泡 | 根据任务抓取最小充分上下文 |
+| **全景感知** | **(新增)** 注入产品树摘要，让AI知晓全局定位 |
 | Token控制 | 控制上下文大小在预算内 |
 | 剪贴板直连 | Prompt自动写入剪贴板 |
 
@@ -196,6 +215,7 @@ devspec impact <node_id>  # 影响分析
 
 ```
 Focus Bubble 包含：
+├── 全景摘要：当前处于产品树的哪个位置 (我是谁? 我在哪?)
 ├── 目标节点：当前要开发的功能
 ├── 依赖契约：依赖的接口签名（不含实现）
 ├── 基质规范：相关的全局规范
@@ -226,7 +246,7 @@ devspec context <node_id> --copy    # 生成上下文并复制到剪贴板
 ```
 task start "xxx"
     │
-    ├── 加载上下文到剪贴板
+    ├── 加载上下文到剪贴板 (含全景摘要)
     ├── 记录任务开始时间
     └── 锁定当前分支状态
     │
@@ -322,21 +342,27 @@ devspec backlog pack <task>         # 打包相关需求到任务
 **场景**：觉得DevSpec的上下文构建太慢，想优化它
 
 ```bash
-# Step 1: 启动任务
+# Step 1: 启动任务 (先看看全局结构)
+$ devspec tree
+DevSpec v0.1
+├── M1: SpecIndex (✅)
+├── M2: Context (🚧)
+└── M3: Session (⏳)
+
+# Step 2: 启动任务
 $ devspec task start "optimize-context-speed"
 ✓ 分析 DevSpec 代码依赖...
 ✓ 上下文已复制到剪贴板 (约 3.2K tokens)
   包含: context_builder.py, query_engine.py, 2个依赖接口
 
-# Step 2: 粘贴给AI，获取优化代码
+# Step 3: 粘贴给AI，获取优化代码
 
-# Step 3: 更新代码后审计
+# Step 4: 更新代码后审计
 $ devspec audit
 ✓ L3 索引已更新 (3个函数变更)
 ✓ 测试通过 (12/12)
-⚠ 建议更新 API 文档 (可选)
 
-# Step 4: 提交
+# Step 5: 提交
 $ devspec task commit
 ✓ 代码已提交
 ✓ 知识图谱已更新
@@ -358,11 +384,15 @@ $ devspec init --scan
 # Step 2: 补充L1/L2定义
 $ vim .specindex/features/feat_payment.yaml
 
-# Step 3: 启动开发任务
+# Step 3: 查看架构影响
+$ devspec map --format mermaid
+(生成 Mermaid 代码，复制到 Notion 查看与 Order 模块的依赖)
+
+# Step 4: 启动开发任务
 $ devspec task start "payment-api"
 ✓ 上下文已复制到剪贴板
 
-# Step 4: 正常开发流程...
+# Step 5: 正常开发流程...
 ```
 
 ---
@@ -377,6 +407,7 @@ project/
 │   └── backlog.yaml             # 需求池
 │
 ├── .specindex/                  # 知识图谱
+│   ├── product.yaml             # 【新增】产品根定义
 │   ├── features/                # L1 功能定义
 │   │   └── feat_xxx.yaml
 │   ├── apis/                    # L2 接口定义
@@ -403,6 +434,7 @@ project/
 | 代码解析 | Tree-sitter |
 | 存储 | SQLite + PyYAML |
 | 剪贴板 | pyperclip |
+| 可视化 | rich (用于 tree 命令) |
 
 ### 7.2 性能目标
 
@@ -421,6 +453,7 @@ project/
 ```
 ✅ bootstrap.py（Phase 0 产物）
 ✅ M1 基础功能：init, scan, query
+✅ M1 可视化：tree (基于 rich 库)
 ✅ M2 基础功能：context --copy
 ✅ CLI框架（Typer）
 ```
@@ -431,7 +464,7 @@ project/
 ⏳ M3 会话管理：task start/commit
 ⏳ M4 质量卫士：audit
 ⏳ M5 需求池：backlog
-⏳ 多语言支持（目前只支持Python）
+⏳ M1 可视化进阶：mermaid map
 ```
 
 ---
@@ -442,7 +475,7 @@ project/
 |------|------|----------|
 | 上下文准备时间 | 减少80% | 对比手动整理 |
 | 自举闭环 | Day 5达成 | 能用devspec开发devspec |
-| 日常使用 | 不觉得烦 | 主观感受 |
+| 全局掌控感 | 提升 | 随时通过 devspec tree 查看进度 |
 
 ---
 
@@ -454,7 +487,7 @@ project/
 3. 自动化优先 —— L3全自动，L2半自动，L1人工
 4. 测试即一致 —— 测试通过就是文档代码一致
 5. 宽松起步 —— 先宽松模式，稳定后再严格
-6. 能用就行 —— 不过度优化工具本身
+6. 上帝视角 —— 随时查看 Tree 和 Map
 ```
 
 ---
@@ -473,7 +506,8 @@ mkdir -p devspec .specindex/features .devspec
 # 3. 创建 bootstrap.py（手写或让AI生成）
 # 功能：读取YAML + 拼接Prompt + 复制到剪贴板
 
-# 4. 创建 DevSpec 自身的第一个 Feature 定义
+# 4. 创建 DevSpec 自身的 Product 和 Feature 定义
+# .specindex/product.yaml
 # .specindex/features/feat_specindex.yaml
 
 # 5. 验证：运行 bootstrap.py 生成 Prompt
@@ -484,6 +518,6 @@ python bootstrap.py --feature feat_specindex
 
 ---
 
-*Version 3.0 Final*  
+*Version 3.1 Final*  
 *Status: Ready for Phase 0*  
-*Next Action: 创建项目目录，开始 Day 1*
+*Next Action: 按照附录 B 开始行动*
