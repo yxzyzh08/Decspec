@@ -1,283 +1,295 @@
-这份文档是 **SpecIndex 项目的最终架构蓝图（v3.2）**。
+# 📘 SpecIndex 系统架构设计规范 (Unified v4.0)
 
-它严格限定在 **“软件产品知识管理系统”** 的基础设施设计范畴，剥离了具体的 AI 任务执行逻辑，专注于数据的**存储、结构定义、API 协议与一致性维护**。
-
----
-
-# 📘 SpecIndex 系统架构设计规范
-**Version**: 3.2 (Infrastructure Final)
-**Type**: Infrastructure Design Document (IDD)
-**Scope**: 核心知识库系统（不包含 AI Agent 执行逻辑）
+> **Software Product Knowledge Management System**
+> **定位**：面向 AI 原生开发的无头语义数据库与治理平台
 
 ---
 
 ## 1. 系统定义 (System Definition)
 
-**SpecIndex** 是一个面向 AI 原生（AI-Native）开发模式的 **“无头语义数据库（Headless Semantic Database）”**。
+### 1.1 核心理念
+SpecIndex 是一个**“Git 原生双模态知识库”**。它将软件产品的知识结构化为图谱，并提供治理机制。
+*   **对于 Git**：它是标准的 YAML 文件集合（Source of Truth）。
+*   **对于 AI**：它是极速响应的语义 API（Runtime Cache）。
+*   **对于人类**：它是防止架构腐化的“立法机构”（Governance）。
 
-### 1.1 核心价值
-它作为软件产品的 **“可信事实源（Single Source of Truth）”**，解决无状态 AI 开发中的以下核心问题：
-*   **记忆外挂**：为无状态的 AI 瞬时构建精准的上下文。
-*   **逻辑一致性**：通过结构化契约，防止文档与代码逻辑脱节。
-*   **分支跟随**：知识库状态与 Git 代码分支严格同步，支持“时间旅行”。
-
-### 1.2 系统边界 (Scope Boundary)
-
-*   **✅ IN SCOPE (本设计包含)**：
-    *   数据存储架构 (YAML + SQLite)。
-    *   元数据模型定义 (Schema)。
-    *   知识图谱拓扑逻辑与算法。
-    *   读写 API (Query & Proposal)。
-    *   数据一致性校验 (Auditor)。
-*   **❌ OUT OF SCOPE (本设计不包含)**：
-    *   任务调度与工作量评估。
-    *   AI 代码生成与具体实现。
-    *   IDE 插件或图形化界面 (UI)。
+### 1.2 系统边界
+*   ✅ **包含**：数据存储（YAML/SQLite）、图谱结构定义、读写 API、提案审核机制、同步器。
+*   ❌ **不包含**：AI Agent 的思考逻辑、IDE 插件 UI、任务调度。
 
 ---
 
-## 2. 核心架构：Git 原生双模态 (Dual-Modal Architecture)
+## 2. 存储架构：双模态 + 提案缓冲
 
-系统采用 **“文件即真理，数据库即缓存”** 的双层存储策略。
+我们采用 **“冷热分离 + 写入缓冲”** 的三级架构。
 
-### 2.1 架构图示
 ```mermaid
 graph TD
-    Git[Git Version Control] --> L1[Layer 1: Cold Storage Truth<br>YAML Files - Human/Git Readable]
-    L1 --> L2[Layer 2: Hot Runtime Cache<br>SQLite + NetworkX - Machine Speed]
-    Syncer[Index Syncer<br>One-way Sync] -.-> L2
-    L3[Layer 3: Cognitive API Gateway<br>FastAPI - Query / Propose / Audit] <--> L2
-    L3 <--> User[External AI / User]
+    User[超级个体/AI] -->|1. Query| API
+    User -->|2. Propose| ProposalMgr
+    
+    subgraph SpecIndex System
+        API[API Gateway]
+        ProposalMgr[Proposal Manager]
+        Syncer[Index Syncer]
+        
+        subgraph Layer 1: Governance
+            Pending[Pending Proposals]
+            DiffEng[Diff Engine]
+        end
+        
+        subgraph Layer 2: Truth (Git)
+            YAML[YAML Files]
+        end
+        
+        subgraph Layer 3: Runtime (Cache)
+            SQLite[(SQLite DB)]
+            NetworkX[Memory Graph]
+        end
+        
+        ProposalMgr -->|Write JSON| Pending
+        Pending -->|Human Approve| YAML
+        YAML -->|Sync| Syncer
+        Syncer -->|Write| SQLite
+        SQLite -->|Read| API
+    end
 ```
 
-### 2.2 存储层设计
-
-#### A. 持久层 (Cold Storage) - 提交到 Git
-目录结构设计如下，确保人类可读且对 Git 友好：
-
-```text
-/project_root
-  ├── .spec_index/
-  │   ├── config.yaml           # 全局配置 (Domain列表, 忽略规则)
-  │   ├── schema/               # Pydantic Schema (用于校验 YAML 合法性)
-  │   │
-  │   ├── substrate/            # 【基质层】全局规范 (水平切面)
-  │   │   ├── logging.yaml      # 日志规范
-  │   │   ├── security.yaml     # 安全规范
-  │   │   └── error.yaml        # 错误码规范
-  │   │
-  │   └── features/             # 【业务层】原子特性 (垂直业务)
-  │       ├── UserDomain/       # 按领域物理分文件夹
-  │       │   ├── feat_login.yaml
-  │       │   └── feat_profile.yaml
-  │       └── OrderDomain/
-  │           └── feat_create.yaml
-```
-
-#### B. 运行时层 (Hot Runtime) - `.gitignore`
-这是系统启动时自动生成的衍生品，提供 ms 级查询响应：
-
-```text
-/project_root
-  ├── .spec_index/
-  │   ├── .cache/               # 必须加入 .gitignore
-  │   │   ├── index.db          # SQLite (存节点、边、全文索引)
-  │   │   └── graph.obj         # NetworkX 序列化对象 (用于复杂路径计算)
-```
+### 2.1 物理层级
+1.  **持久层 (L1-Truth)**：`YAML` 文件。纳入 Git 版本控制。
+2.  **运行时层 (L2-Runtime)**：`SQLite` + `NetworkX`。`.gitignore` 忽略。
+3.  **提案缓冲层 (L3-Buffer)**：`pending_proposals/*.json`。临时存储 AI 的修改建议，等待人类批准。
 
 ---
 
-## 3. 数据模型定义 (Data Model)
+## 3. 全景数据模型 (The Grand Schema)
 
-### 3.1 核心实体：原子特性 (Atomic Feature)
-对应 `features/**/*.yaml` 中的每个文件。这是图谱的基本单元。
+采用您的 **L1/L2/L3 模型**，并增加 **基质层 (L0)**。
+
+### 3.1 节点类型矩阵
+
+| 层级 | 英文标识 | ID前缀 | 职责 | 示例 |
+| :--- | :--- | :--- | :--- | :--- |
+| **L0 基质** | **Standard** | `std_` | **环境上下文**。定义的通用规范，不参与连线，但随域注入。 | `std_logging` (日志规范) |
+| **L1 概念** | **Feature** | `feat_` | **产品意图**。WHY 和 WHAT。 | `feat_login` |
+| | **UserStory** | `us_` | 验收标准。 | `us_login_mobile` |
+| **L2 结构** | **API** | `api_` | **契约定义**。L2 是最核心的图谱锚点。 | `api_auth_login` |
+| | **DataModel** | `model_` | 数据库 Schema。 | `model_users` |
+| | **Component** | `comp_` | 逻辑组件。 | `comp_login_form` |
+| **L3 实现** | **Function** | `fn_` | **代码影子**。只存签名和副作用，不存代码体。 | `fn_login_handler` |
+| **跨层** | **Rule** | `rule_` | 硬性约束。 | `rule_pwd_complexity` |
+| | **Doc** | `doc_` | 文档索引。 | `doc_prd_auth` |
+
+### 3.2 关键 Schema 定义补充
+
+#### Standard (基质 - 新增)
+用于解决“AI 不知道日志该怎么打”的问题。
 
 ```yaml
-# 示例：feat_user_login.yaml
-meta:
-  id: "feat_user_login"       # 全局唯一 ID
-  type: "FEATURE"
-  domain: "UserDomain"
-  status: "IMPLEMENTED"       # DRAFT | PROPOSED | IMPLEMENTED
-
-intent:
-  summary: "用户通过手机号和验证码登录"
-  # 语义向量将基于此字段生成，存入 SQLite
-
-contract: # 核心契约
-  input: 
-    phone: "String(MobileCN)"
-    code: "String(Len=6)"
-  output: 
-    token: "String(JWT)"
-  side_effects:               # 关键：显式声明副作用
-    - "DB_WRITE: users"
-    - "API_CALL: sms_service"
-
-dependencies: # 图谱连接
-  - target: "feat_sms_verify"
-    type: "HARD_LINK"         # HARD_LINK (调用) | SOFT_LINK (关联)
-    reason: "校验验证码"
-
-assets: # 物理映射
-  docs: ["docs/login.md"]
-  code_signatures:            # 由 Syncer 自动扫描代码填充，不建议人工维护
-    - file: "src/auth.py"
-      func: "login_handler"
+# .specindex/L0/standards/std_logging.yaml
+id: std_logging
+type: Standard
+scope: ["backend", "api"]  # 注入范围
+priority: critical
+content: |
+  所有错误日志必须包含 trace_id。
+  禁止打印 PII（敏感信息）。
+  格式必须为 JSON: {"level": "info", "msg": "..."}
 ```
 
-### 3.2 辅助实体：基质 (Substrate)
-对应 `substrate/*.yaml`。不作为图谱节点，而是作为 **"环境上下文 (Ambient Context)"**。
-*   **作用**：定义全系统的“宪法”，如日志格式、鉴权标准。
-*   **注入规则**：基于 Domain 或 Tags 自动注入 Prompt。
+#### Feature & API & Function
+*(直接采纳您文档中的 Schema 定义，那是完美的。特别是 `side_effects` 枚举，必须保留。)*
 
 ---
 
-## 4. 核心组件与机制 (Core Mechanisms)
+## 4. 目录结构规范
 
-### 4.1 Index Syncer (海马体同步器)
-**职责**：负责将 YAML 数据加载到 SQLite，并维护代码签名的一致性。
-**触发时机**：系统启动、Git 分支切换 (Post-checkout hook)、提案批准后。
-
-**工作流**：
-1.  **Purge**：清空 `.cache/index.db`。
-2.  **Load**：遍历 YAML，校验 Schema，写入 `nodes` 和 `edges` 表。
-3.  **Scan**：调用 **Tree-sitter** 解析器，扫描项目源码。
-    *   提取所有 Public Function 的签名。
-    *   更新 `index.db` 中的 `code_signatures` 表。
-4.  **Vectorize** (可选)：对 `intent.summary` 进行 Embedding，存入向量字段。
-
-### 4.2 提案-审核协议 (Proposal-Review Protocol)
-**职责**：管理对知识库的“写”操作。**AI 禁止直接修改 YAML 文件**。
-
-**工作流**：
-1.  **Propose**：外部 Agent 调用 API 提交变更请求。
-2.  **Diff**：系统生成内存中的 YAML 对象，对比当前文件，生成 Diff。
-3.  **Gatekeep**：系统暂停，等待 API 返回（或人类确认）。
-4.  **Commit**：批准后，系统使用 `PyYAML` 将变更**回写**到磁盘上的 YAML 文件。
-5.  **Re-Sync**：触发局部 Index Syncer，更新缓存。
-
----
-
-## 5. API 接口定义 (API Reference)
-
-API 是本系统的唯一对外界面。
-
-### 5.1 Query API (构建上下文)
-
-```typescript
-/**
- * 核心接口：获取“关注气泡”
- * 根据当前任务，返回最小且充分的知识切片
- */
-GET /context/bubble
-Params:
-  - focus_node_id: string (可选，如 "feat_login")
-  - query: string (可选，如 "修改登录逻辑")
-Returns:
-  - target_feature: Object (当前功能的完整定义)
-  - dependencies: List (直接依赖的接口签名，不含实现)
-  - substrate: List (相关的基质规范，如 Logging 规范)
-  - related_docs: List (关联文档路径)
-
-/**
- * 语义搜索
- */
-GET /context/search
-Params:
-  - q: string
-Returns:
-  - nodes: List<NodeMetadata>
-```
-
-### 5.2 Mutation API (变更提案)
-
-```typescript
-/**
- * 提案：创建/更新特性
- */
-POST /proposal/feature
-Body:
-  - domain: string
-  - name: string
-  - intent: string
-  - contract: Object
-Returns:
-  - proposal_id: string
-  - diff_preview: string
-
-/**
- * 提案：添加依赖关系
- */
-POST /proposal/dependency
-Body:
-  - source_id: string
-  - target_id: string
-  - type: "HARD" | "SOFT"
-```
-
-### 5.3 Audit API (一致性校验)
-
-```typescript
-/**
- * 校验代码与图谱的一致性
- * 用于 CI/CD 或 代码提交前检查
- */
-POST /audit/verify
-Body:
-  - changed_files: List<string>
-Returns:
-  - violations: List<{
-      severity: "ERROR" | "WARN",
-      msg: "Code calls 'PaymentService' but dependency not declared in SpecIndex."
-    }>
+```text
+/project_root
+  ├── .specindex/
+  │   ├── schema/                 # JSON Schema 校验文件
+  │   ├── .runtime/               # [GitIgnore] SQLite & Logs
+  │   ├── .pending/               # [GitIgnore] 待审核的提案 JSON
+  │   │
+  │   ├── L0/                     # 基质层
+  │   │   └── standards/
+  │   ├── L1/                     # 概念层
+  │   │   ├── features/
+  │   │   └── flows/
+  │   ├── L2/                     # 结构层
+  │   │   ├── apis/
+  │   │   └── data_models/
+  │   ├── L3/                     # 实现层
+  │   │   └── functions/
+  │   └── rules/                  # 规则层
 ```
 
 ---
 
-## 6. 数据库设计 (Runtime Schema - SQLite)
+## 5. 核心组件设计
 
-虽然数据源是 YAML，但在 SQLite 中我们需要关系模型来加速查询。
+### 5.1 Index Syncer (同步器)
+*(沿用您的 Python 实现，增加 Standard 处理)*
 
-**Table: `nodes`**
-*   `id` (PK, TEXT): feat_user_login
-*   `type` (TEXT): FEATURE / SUBSTRATE
-*   `domain` (TEXT): UserDomain
-*   `content_blob` (JSON): YAML 的完整内容副本
-*   `embedding` (BLOB): 向量数据
+*   **职责**：YAML $\rightarrow$ SQLite 单向同步。
+*   **触发**：启动时、提案批准后、Git Checkout 后。
+*   **增强**：在写入 SQLite `nodes` 表时，计算节点的 Embedding（如果配置了向量库），存入 `vector` 字段。
 
-**Table: `edges`**
-*   `source_id` (FK)
-*   `target_id` (FK)
-*   `type` (TEXT): HARD_LINK / SOFT_LINK
+### 5.2 Query Engine (查询引擎)
+*(沿用您的 Python 实现，增加 Context Bubble)*
 
-**Table: `signatures` (代码影子)**
-*   `node_id` (FK)
-*   `file_path` (TEXT)
-*   `func_name` (TEXT)
-*   `signature_hash` (TEXT): 用于快速检测代码变更
+我们需要在基础查询之上，增加一个**“智能组装”**方法：
+
+```python
+    def get_context_bubble(self, focus_id: str) -> Dict:
+        """
+        构建关注气泡：核心节点 + 依赖契约 + 环境基质
+        """
+        # 1. 获取核心节点
+        node = self.get_node(focus_id)
+        
+        # 2. 获取 L1/L2 依赖 (深度=1)
+        deps = self.get_dependencies(focus_id, depth=1)
+        
+        # 3. 获取相关基质 (Standard)
+        # 比如：如果是 API 节点，自动拉取 std_logging, std_security
+        standards = self.list_nodes(node_type='Standard')
+        relevant_standards = [
+            s for s in standards 
+            if node['category'] in s['content']['scope']
+        ]
+        
+        return {
+            "focus": node,
+            "contracts": deps,       # 只给接口签名，不给实现
+            "ambient": relevant_standards
+        }
+```
+
+### 5.3 Proposal Manager (提案管理器 - 新增核心)
+这是**治理**的核心。替代直接的 `create_node`。
+
+```python
+class ProposalManager:
+    def __init__(self, spec_root: Path):
+        self.pending_dir = spec_root / ".pending"
+        self.pending_dir.mkdir(exist_ok=True)
+
+    def propose_change(self, change_type: str, data: Dict, reason: str) -> str:
+        """
+        提交提案
+        Args:
+            change_type: 'CREATE', 'UPDATE', 'DELETE'
+            data: 节点的 YAML 内容
+            reason: AI 解释为什么要改
+        """
+        proposal_id = f"prop_{uuid.uuid4().hex[:8]}"
+        proposal = {
+            "id": proposal_id,
+            "timestamp": datetime.now().isoformat(),
+            "type": change_type,
+            "reason": reason,
+            "data": data,
+            "status": "PENDING"
+        }
+        
+        # 写入临时 JSON
+        with open(self.pending_dir / f"{proposal_id}.json", "w") as f:
+            json.dump(proposal, f, indent=2)
+            
+        return proposal_id
+
+    def list_proposals(self) -> List[Dict]:
+        # 列出所有待审核提案
+        pass
+
+    def approve_proposal(self, proposal_id: str, syncer: IndexSyncer):
+        """
+        批准提案：JSON -> YAML -> Sync
+        """
+        p_path = self.pending_dir / f"{proposal_id}.json"
+        with open(p_path) as f:
+            prop = json.load(f)
+            
+        # 1. 执行写入 YAML 操作 (利用 API 中的 _get_file_path 逻辑)
+        if prop['type'] == 'CREATE' or prop['type'] == 'UPDATE':
+            # Write to YAML...
+            pass
+        elif prop['type'] == 'DELETE':
+            # Delete YAML...
+            pass
+            
+        # 2. 删除提案文件
+        p_path.unlink()
+        
+        # 3. 触发局部同步
+        syncer.sync_file(...) 
+```
 
 ---
 
-## 7. 技术栈推荐 (Implementation Stack)
+## 6. API 接口定义 (SpecIndex API v1)
 
-为了实现轻量级、无依赖、易维护：
+对外暴露的标准化接口。
 
-*   **核心语言**: **Python 3.10+**
-*   **Web 框架**: **FastAPI** (高性能 API 服务)
-*   **数据校验**: **Pydantic V2** (定义 YAML Schema 和 API Model)
-*   **文件处理**: **PyYAML** (读写 YAML)
-*   **数据库 ORM**: **SQLModel** (结合 Pydantic 和 SQLAlchemy，完美适配 SQLite)
-*   **代码解析**: **Tree-sitter** (Python binding，用于提取代码签名)
-*   **图计算**: **NetworkX** (用于依赖分析)
+| 方法 | 端点 | 描述 |
+| :--- | :--- | :--- |
+| **Context** | `GET /context/bubble?id={id}` | **AI 最常用**。获取任务的完整上下文包。 |
+| **Search** | `GET /search?q={query}` | 全文/语义搜索。 |
+| **Read** | `GET /node/{id}` | 获取单个节点详情。 |
+| **Graph** | `GET /dependencies/{id}` | 获取依赖树。 |
+| **Write** | `POST /proposal` | **AI 唯一写入口**。提交变更提案。 |
+| **Admin** | `POST /proposal/{id}/approve` | 人类批准提案。 |
+| **Admin** | `POST /sync` | 强制全量同步。 |
 
 ---
 
-### 架构师结语
+## 7. 数据库设计 (SQLite)
 
-这份文档完整定义了 **SpecIndex** 的物理形态和交互规则。
+采用您的 SQL 设计，完全无需修改。它非常完美。
 
-*   它**不是**一个简单的文档文件夹，因为它有数据库索引和 API 网关。
-*   它**不是**一个黑盒数据库，因为它的核心存储是 Git 管理的 YAML 文件。
+```sql
+-- 仅展示核心，沿用您的设计
+CREATE TABLE nodes (
+    id TEXT PRIMARY KEY,
+    type TEXT NOT NULL,
+    layer TEXT NOT NULL,
+    content JSON NOT NULL, -- 完整 YAML 镜像
+    search_text TEXT,      -- FTS 索引源
+    -- ...
+);
+CREATE TABLE edges (...);
+```
 
-这套设计完美实现了**“数据与代码同源”**，是支撑超级个体进行无状态 AI 开发的最稳固基石。
+---
+
+## 8. 实施路线图
+
+### 阶段一：骨架与只读 (Week 1)
+1.  **Schema 定义**：建立 11 种 YAML 模板 (10种基础 + 1种 Standard)。
+2.  **Syncer 开发**：实现 `YAML -> SQLite` 的单向同步。
+3.  **Read API**：实现 `get_node`, `search`, `list_nodes`。
+*   *产出：您可以手动写 YAML，通过脚本查询数据库。*
+
+### 阶段二：治理闭环 (Week 2)
+1.  **Proposal Manager**：开发提案的 JSON 读写逻辑。
+2.  **CLI 工具**：开发 `spec propose list` 和 `spec propose approve` 命令行工具。
+3.  **Write API**：封装 `POST /proposal`。
+*   *产出：AI 可以通过 API 申请修改，您通过 CLI 批准。*
+
+### 阶段三：上下文智能 (Week 3)
+1.  **Bubble 算法**：实现 `get_context_bubble`，智能抓取依赖和基质。
+2.  **Code Scanner**：引入 Tree-sitter，自动扫描代码文件，更新 L3 `FunctionSummary` 节点。
+*   *产出：完全体。AI 获得代码感知道具。*
+
+---
+
+### 💡 架构师总结
+
+这份文档是 **User-Claude 的工程精度** 与 **Gemini 的架构治理** 的完美结合。
+
+1.  **它足够简单**：基于文件和 SQLite，单人即可维护。
+2.  **它足够安全**：提案机制确保了 AI 不会把知识库搞乱。
+3.  **它足够智能**：分层结构和上下文气泡设计，专为 LLM 的认知特性优化。
+
+这就是您需要的最终版 **SpecIndex** 设计。
