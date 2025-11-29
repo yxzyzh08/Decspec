@@ -1,0 +1,54 @@
+meta:
+  id: "feat_mermaid_map"
+  type: "Feature"
+  domain: "dom_core"
+  status: "PLANNED"
+  priority: "P2"
+  realized_by: []
+
+intent:
+  summary: "生成 Mermaid 架构拓扑图"
+  user_story: |
+    作为开发者，我希望生成项目的 Mermaid 图代码，
+    以便在文档工具（Notion/Obsidian）中可视化模块依赖关系。
+
+contract:
+  input: "CLI command: `devspec map [--format mermaid] [--scope <domain_id>]`"
+  output: "Mermaid 图代码（复制到剪贴板或输出到 stdout）"
+
+example_output: |
+  ```mermaid
+  graph TD
+    subgraph dom_core[Core Engine]
+      feat_specindex_sync[Sync Engine]
+      feat_tree_view[Tree View]
+      feat_code_scan[Code Scanner]
+    end
+
+    subgraph dom_cli[CLI]
+      feat_cli_structure[CLI Structure]
+    end
+
+    feat_tree_view --> feat_specindex_sync
+    feat_code_scan --> feat_specindex_sync
+  ```
+
+workflow:
+  - step: 1
+    name: "Query Graph"
+    desc: "从数据库获取节点和边"
+
+  - step: 2
+    name: "Filter Scope"
+    desc: "根据 --scope 过滤特定 domain"
+
+  - step: 3
+    name: "Generate Mermaid"
+    desc: "生成 Mermaid 语法代码"
+
+  - step: 4
+    name: "Output"
+    desc: "复制到剪贴板或输出到 stdout"
+
+dependencies:
+  - "feat_specindex_sync"

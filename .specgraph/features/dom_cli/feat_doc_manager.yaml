@@ -1,0 +1,29 @@
+meta:
+  id: "feat_doc_manager"
+  type: "Feature"
+  domain: "dom_cli"
+  status: "PLANNED"
+
+intent:
+  summary: "文档消化器 (Doc Digester)"
+  user_story: "作为用户，我只维护 Markdown 文档。我希望工具能自动分析我的文档变更，同步更新 Feature YAML，从而驱动后续开发。"
+
+contract:
+  input: "CLI command: `devspec doc digest <file>`"
+  output: "Updated YAML files in `.specgraph/features/`."
+
+workflow:
+  - step: 1
+    name: "Parse"
+    desc: "Read Markdown file and identify sections (headers)."
+
+  - step: 2
+    name: "Extract"
+    desc: "Use AI to extract structured data (Feature ID, Intent, Workflow) from the text."
+
+  - step: 3
+    name: "Update"
+    desc: "Update or Create corresponding YAML files."
+
+realized_by:
+  - comp_doc_digester

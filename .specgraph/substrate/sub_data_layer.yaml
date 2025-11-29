@@ -1,0 +1,15 @@
+meta:
+  id: "sub_data_layer"
+  type: "Substrate"
+  scope: ["all"]
+
+content: |
+  # Data Layer Requirements (SQLite)
+  
+  1. **ORM Framework**: Must use `sqlmodel` (SQLAlchemy + Pydantic).
+  2. **Database Path**: Store in `.specgraph/.runtime/index.db`.
+  3. **Async**: Use synchronous API for CLI simplicity (unless performance requires async).
+  4. **Schema**:
+     - Table `nodes`: id (PK), type, domain, content (JSON), search_text.
+     - Table `edges`: source (FK), target (FK), type (DEPENDS_ON, etc).
+  5. **Idempotency**: The `sync` operation must be idempotent (wipe & rebuild or upsert).

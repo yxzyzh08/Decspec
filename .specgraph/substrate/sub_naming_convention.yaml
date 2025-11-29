@@ -1,0 +1,21 @@
+meta:
+  id: "sub_naming_convention"
+  type: "Substrate"
+  scope: ["all"]
+
+content: |
+  # Directory Naming Conventions
+  
+  To ensure consistency, the SpecGraph directory structure MUST follow these naming conventions:
+  
+  1. **Lowercase**: All directory names must be lowercase.
+  2. **No Underscores**: Use concatenated words (e.g., `datamodels`, not `data_models`).
+  3. **Plural**: Use plural nouns for collections (e.g., `features`, `components`).
+  
+  ## Standard Directories
+  - `features/`: Feature specifications. Can be organized by domain (e.g., `features/dom_core/`).
+  - `components/`: Component specifications.
+  - `apis/`: API specifications.
+  - `datamodels/`: Data model specifications.
+  - `substrate/`: Substrate (rule) specifications.
+  - `design/`: Design documents.

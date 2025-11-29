@@ -1,0 +1,57 @@
+meta:
+  id: "des_ai_guidelines"
+  type: "Design"
+  status: "ACTIVE"
+  tags: ["ai", "guidelines", "capabilities"]
+  prd_ref: "standerd_req.md#3"  # 追溯到 PRD 章节
+
+info:
+  title: "AI Capability Guidelines"
+  summary: "定义 AI 的能力边界，指导人机协作分工。"
+
+content: |
+  # AI 能力边界
+
+  在设计前必须明确 AI 的真实能力，合理分配人机协作任务。
+
+  ## 1. AI 擅长（可放心交给 AI）
+
+  | 能力 | 可靠度 | 说明 |
+  |------|--------|------|
+  | 单文件代码生成 | ★★★★★ | AI 最擅长的领域 |
+  | 代码补全和修改 | ★★★★★ | 局部修改非常可靠 |
+  | 测试用例生成 | ★★★★☆ | 基于代码生成测试 |
+  | 文档生成 | ★★★★☆ | Docstring、README |
+  | YAML 定义生成 | ★★★★☆ | Component、Feature 模板 |
+
+  ## 2. AI 不擅长（需人类主导）
+
+  | 能力 | 可靠度 | 应对策略 |
+  |------|--------|----------|
+  | 跨文件重构 | ★★☆☆☆ | 人工拆解为小任务，逐文件处理 |
+  | 架构决策 | ★★☆☆☆ | 人工决策，AI 执行 |
+  | 自我纠错 | ★★☆☆☆ | 测试驱动验证，人工 Review |
+  | 业务正确性 | ★☆☆☆☆ | 人工 Review 业务逻辑 |
+  | 长期记忆 | ★☆☆☆☆ | 依赖 SpecGraph 存储上下文 |
+
+  ## 3. 人机协作原则
+
+  ### AI 负责
+  - 根据 Component 设计生成代码
+  - 生成测试用例
+  - 生成文档
+  - 执行明确的、局部的修改
+
+  ### 人类负责
+  - 架构决策
+  - 业务需求判断
+  - Component 设计审核
+  - 跨文件重构规划
+  - 最终 Review
+
+  ## 4. Context Builder 应用
+
+  当生成 AI Prompt 时，Context Builder 应该：
+  1. 注入此文档，让 AI 了解自己的能力边界
+  2. 对于 AI 不擅长的任务，提示用户拆解
+  3. 对于需要人工决策的部分，主动询问

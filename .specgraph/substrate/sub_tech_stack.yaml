@@ -1,0 +1,24 @@
+meta:
+  id: "sub_tech_stack"
+  type: "Substrate"
+  scope: ["all"]
+
+content: |
+  # Technology Stack Requirements (Strict)
+  
+  1. **Language**: Python 3.10+ (Must use Type Hints)
+  2. **CLI Framework**: `typer` (with `rich` for output formatting)
+  3. **Path Handling**: `pathlib.Path` (STRICTLY FORBIDDEN: `os.path`)
+  4. **Config/Data**: `pyyaml` for YAML, `pydantic` for data validation.
+  5. **Clipboard**: `pyperclip`
+  
+  # Coding Style & Architecture
+  - **Functional first**: Prefer functions over classes for simple logic.
+  - **Docstrings**: All public functions must have docstrings.
+  - **Error Handling**: Use `typer.Exit(code=1)` for CLI errors.
+  
+  # Size Constraints (AI Friendly)
+  - **File Size**: 
+      - Target: < 400 lines (Ideal for context stuffing).
+      - Max: 800 lines (Hard limit to prevent AI hallucination).
+      - If a file grows too large, split it by responsibility (e.g., `core.py` -> `core_utils.py`, `core_models.py`).

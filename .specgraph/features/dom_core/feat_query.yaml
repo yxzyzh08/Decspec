@@ -1,0 +1,52 @@
+meta:
+  id: "feat_query"
+  type: "Feature"
+  domain: "dom_core"
+  status: "PLANNED"
+  priority: "P1"
+  realized_by: []
+
+intent:
+  summary: "实现图谱查询命令 (devspec query)"
+  user_story: |
+    作为开发者，我希望通过命令行查询某个节点的详细信息及其关联关系，
+    以便快速了解某个 Feature/Component 的上下文。
+
+contract:
+  input: "CLI command: `devspec query <node_id> [--deps] [--refs]`"
+  output: |
+    - 节点基本信息（type, domain, status）
+    - 可选：依赖关系（--deps）
+    - 可选：被引用关系（--refs）
+
+example_output: |
+  Node: feat_tree_view
+  Type: Feature
+  Domain: dom_core
+  Status: PLANNED
+
+  Dependencies:
+    → feat_specindex_sync (DEPENDS_ON)
+
+  Realized By:
+    (none)
+
+workflow:
+  - step: 1
+    name: "Parse Arguments"
+    desc: "解析 node_id 和可选参数"
+
+  - step: 2
+    name: "Query Node"
+    desc: "从数据库获取节点信息"
+
+  - step: 3
+    name: "Query Edges"
+    desc: "根据参数查询相关边关系"
+
+  - step: 4
+    name: "Format Output"
+    desc: "使用 rich 格式化输出"
+
+dependencies:
+  - "feat_specindex_sync"

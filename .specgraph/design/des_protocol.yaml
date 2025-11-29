@@ -1,0 +1,57 @@
+meta:
+  id: "des_protocol"
+  type: "Design"
+  status: "ACTIVE"
+  tags: ["workflow", "protocol", "sdlc"]
+
+info:
+  title: "DevSpec Development Protocol (Document Driven)"
+  summary: "定义'文档驱动'的单向开发流：文档即真理。"
+
+content: |
+  # 1. 核心铁律 (The Iron Law)
+
+  **Markdown Documents in `.specgraph/documents/` are the Single Source of Truth.**
+
+  - **Markdown Docs**: 唯一真理 (The Origin)。人类只维护这个。
+  - **YAML Specs**: 中间产物 (Intermediate)。由文档解析生成/更新。
+  - **Code**: 最终投影 (Projection)。由 Spec 指导生成。
+  - **Database**: 运行时索引。
+
+  # 2. 严格单向流 (Strict One-Way Flow)
+
+  数据流必须是单向的，禁止逆流。
+
+  ```mermaid
+  graph TD
+    Doc[Markdown PRD] -->|Digest| Spec[YAML Features]
+    Spec -->|Codegen| Code[Python Src]
+    Code -->|Verify| Test[Tests]
+  ```
+
+  # 3. 开发协议 (The Protocol)
+
+  ## Step 1: Write (Human)
+  - 修改 `.specgraph/documents/` 下的 Markdown 文档。
+  - 描述清楚 Feature 的 Intent, Workflow 和 Rules。
+
+  ## Step 2: Digest (AI/Tool)
+  - 运行 `devspec doc digest <file>`。
+  - 系统分析文档变更，自动更新/创建 `features/*.yaml`。
+  - **人类只需 Review YAML，无需手写。**
+
+  ## Step 3: Code (AI)
+  - 运行 `devspec implement <feature_id>` (未来能力)。
+  - AI 读取 Feature YAML，生成/更新代码。
+
+  ## Step 4: Verify (System)
+  - 运行测试。
+  - 如果测试失败或代码行为不符合预期：
+    - **禁止**直接改代码凑合。
+    - **禁止**改 YAML 凑合。
+    - **必须**回到 Step 1 修改文档，重新触发流程。
+
+  # 4. 废弃概念
+
+  - ❌ **Reconcile (反向调和)**: 代码偏离文档被视为 Bug，必须重写代码，而不是修改文档。
+  - ❌ **Manual YAML Editing**: 原则上不鼓励，YAML 应由文档生成。

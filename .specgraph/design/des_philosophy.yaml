@@ -1,0 +1,43 @@
+meta:
+  id: "des_philosophy"
+  type: "Design"
+  status: "ACTIVE"
+  tags: ["philosophy", "core", "principles"]
+
+info:
+  title: "DevSpec Core Philosophy"
+  summary: "定义 DevSpec 的核心设计理念、架构隐喻和不做清单。"
+
+content: |
+  # 1. 核心隐喻：衔尾蛇 (Ouroboros)
+  DevSpec 是一个自举系统。它由自己构建，其源码结构必须严格遵循 SpecGraph 的定义。
+  **Code is the projection of Spec.**
+
+  # 2. 四大理念
+
+  | 理念 | 说明 |
+  |------|------|
+  | **串行流 (Serial Flow)** | 单人开发不追求伪并行，追求极致流畅的串行吞吐率 |
+  | **会话制 (Session Sandbox)** | 任务沙箱平衡 Token 成本与上下文连贯性 |
+  | **递归进化 (Recursive Evolution)** | 自举开发，吃自己的狗粮（Dogfooding） |
+  | **用户主权 (User Sovereignty)** | 规范服务于人，不适应就改规范，而非强迫适应 |
+
+  # 3. 架构原则
+
+  ## 3.1 瀑布流真理 (Waterfall Truth)
+  - **Truth (源头)**: Markdown Docs (`.specgraph/documents/`). 人类编写，自然语言。
+  - **Spec (中间态)**: YAML Files (`.specgraph/features/`). 由工具从文档解析生成。
+  - **Code (投影)**: Python Files. 由 Spec 指导生成。
+
+  ## 3.2 垂直与水平分离
+  - **Product/Feature (垂直)**: 定义实体结构（Domain 目录）。
+  - **Substrate (水平)**: 定义环境规则（全局规范）。
+
+  # 4. 不做清单 (Anti-Patterns)
+
+  ```
+  ❌ 不做强制门禁（阻止提交）
+  ❌ 不做复杂审批流程
+  ❌ 不做并行开发调度
+  ❌ 不做团队协作功能
+  ```

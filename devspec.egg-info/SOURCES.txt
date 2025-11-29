@@ -1,0 +1,15 @@
+README.md
+pyproject.toml
+devspec/__init__.py
+devspec/main.py
+devspec.egg-info/PKG-INFO
+devspec.egg-info/SOURCES.txt
+devspec.egg-info/dependency_links.txt
+devspec.egg-info/entry_points.txt
+devspec.egg-info/requires.txt
+devspec.egg-info/top_level.txt
+devspec/core/__init__.py
+devspec/core/context.py
+devspec/core/db_models.py
+devspec/core/loader.py
+devspec/core/sync.py

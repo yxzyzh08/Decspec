@@ -1,0 +1,24 @@
+[project]
+name = "devspec"
+version = "0.1.0"
+description = "Self-bootstrapping development specification system for AI-assisted programming."
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "pyperclip>=1.11.0",
+    "pyyaml>=6.0.3",
+    "rich>=13.0.0",
+    "sqlmodel>=0.0.22",
+    "typer>=0.20.0",
+]
+
+[project.scripts]
+devspec = "devspec.main:app"
+
+[tool.setuptools.packages.find]
+include = ["devspec*"]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.1",
+]

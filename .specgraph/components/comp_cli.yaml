@@ -1,0 +1,33 @@
+meta:
+  id: "comp_cli"
+  type: "Component"
+  domain: "dom_cli"
+  status: "DONE"
+
+info:
+  name: "CLI Interface"
+  description: |
+    DevSpec 命令行接口，使用 Typer 实现。
+    包含 init、generate、sync 等命令。
+
+impl:
+  language: "python"
+  modules:
+    - path: "devspec/main.py"
+      desc: "CLI 入口点，定义所有命令"
+    - path: "devspec/init/"
+      desc: "init 命令实现：交互式项目初始化、文件生成"
+
+dependencies:
+  - "typer"
+  - "rich"
+  - "pyperclip"
+  - "pyyaml"
+
+commands:
+  - name: "init"
+    desc: "交互式初始化 .specgraph 目录，生成 product.yaml 和 AGENT.md"
+  - name: "generate"
+    desc: "根据 Feature ID 生成 AI 上下文 Prompt"
+  - name: "sync"
+    desc: "同步 YAML 文件到 SQLite 数据库"
