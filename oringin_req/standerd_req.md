@@ -1,13 +1,3 @@
-这是为您更新后的 **DevSpec v3.1** 需求文档。
-
-**主要变更点：**
-1.  在 **M1: 知识图谱引擎** 中增加了 **“全景视图 (Global Product Map)”** 的功能定义。
-2.  引入了 `product.yaml` 根节点概念。
-3.  增加了 `tree` (ASCII树) 和 `map` (Mermaid拓扑) 两个可视化 CLI 命令。
-4.  在 **M2: 上下文装配器** 中补充了全景摘要的注入逻辑。
-
----
-
 # DevSpec：AI原生开发协航系统
 
 > **Product Requirements Document (PRD)**  
