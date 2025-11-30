@@ -14,9 +14,11 @@ from devspec.core.spec_indexer import SpecIndexer
 if sys.platform == "win32":
     sys.stdout.reconfigure(encoding='utf-8')
 
+
 class ConsistencyMonitor:
     """
     Orchestrates the comparison between PRD Intent and Spec Structure.
+    Generates a layered dashboard with separate tables for Domain/Design, Features, and Components.
     """
 
     def __init__(self, root_path: Path):
@@ -25,32 +27,11 @@ class ConsistencyMonitor:
         self.parser = MarkdownParser(root_path)
         self.indexer = SpecIndexer(root_path)
 
-    def _determine_domain(self, node_id: str, node_data: Dict, index: Dict) -> str:
-        """
-        Infers the domain of a node.
-        Priority:
-        1. 'domain' field in YAML
-        2. Prefix matching (dom_xxx -> dom_xxx)
-        3. Parent feature's domain (for components)
-        4. '_general' fallback
-        """
-        # 1. Explicit domain field
-        if node_data and "domain" in node_data:
-            return node_data["domain"]
-        
-        # 2. Self is a domain
-        if node_id.startswith("dom_"):
-            return node_id
-
-        # 3. Fallback: Attempt to guess from prefix or context (Simplified for Phase 0)
-        # Real logic would require a full graph traversal
-        return "_general"
-
     def run_check(self):
         """
-        Executes the consistency check, prints grouped reports, and generates the dashboard.
+        Executes the consistency check, prints layered reports, and generates the dashboard.
         """
-        self.console.print("[bold blue]DevSpec Consistency Monitor (Domain View)[/bold blue]")
+        self.console.print("[bold blue]DevSpec Consistency Monitor (Layered View)[/bold blue]")
         self.console.print(f"Scanning root: {self.root_path}\n")
 
         # 1. Extract Intent & Structure
@@ -58,66 +39,63 @@ class ConsistencyMonitor:
         yaml_nodes = self.indexer.index_all()
         all_ids = set(prd_anchors.keys()) | set(yaml_nodes.keys())
 
-        # 2. Group by Domain
-        domain_groups = defaultdict(list)
-        
-        # Statistics
-        stats = {"total": len(all_ids), "synced": 0, "issues": 0}
+        # 2. Categorize nodes by type
+        design_nodes = []  # Domain, Design, Product, Substrate
+        feature_nodes = []  # Features
+        component_nodes = []  # Components
+
+        # Build reverse index: component_id -> list of feature_ids
+        component_to_features = self._build_component_feature_map(yaml_nodes)
 
         for node_id in all_ids:
             in_prd = node_id in prd_anchors
             in_spec = node_id in yaml_nodes
             node_data = yaml_nodes.get(node_id, {})
+            prd_meta = prd_anchors.get(node_id)
 
-            # Determine Domain grouping
-            domain = self._determine_domain(node_id, node_data, yaml_nodes)
-            
-            # Calculate Status
-            status_obj = self._calculate_status(node_id, in_prd, in_spec, prd_anchors.get(node_id), node_data)
-            
-            if status_obj["is_synced"]:
-                stats["synced"] += 1
+            node_info = self._build_node_info(node_id, in_prd, in_spec, prd_meta, node_data, component_to_features)
+
+            # Categorize by type
+            if node_info["type"] in ("Domain", "Design", "Product", "Substrate"):
+                design_nodes.append(node_info)
+            elif node_info["type"] == "Feature":
+                feature_nodes.append(node_info)
+            elif node_info["type"] == "Component":
+                component_nodes.append(node_info)
             else:
-                stats["issues"] += 1
+                design_nodes.append(node_info)  # Unknown goes to design
 
-            domain_groups[domain].append(status_obj)
+        # Sort all lists
+        design_nodes.sort(key=lambda x: x["id"])
+        feature_nodes.sort(key=lambda x: x["id"])
+        component_nodes.sort(key=lambda x: x["id"])
 
-        # 3. Display Tables per Domain
-        sorted_domains = sorted(domain_groups.keys())
-        # Move _general to end
-        if "_general" in sorted_domains:
-            sorted_domains.remove("_general")
-            sorted_domains.append("_general")
+        # 3. Calculate statistics
+        stats = self._calculate_stats(design_nodes, feature_nodes, component_nodes)
 
-        for domain in sorted_domains:
-            items = domain_groups[domain]
-            # Sort items by ID
-            items.sort(key=lambda x: x["id"])
-            
-            title = f"Domain: {domain}" if domain != "_general" else "General / Unassigned"
-            table = Table(title=title, show_header=True, header_style="bold magenta")
-            table.add_column("Node ID", style="cyan")
-            table.add_column("Type", style="white")
-            table.add_column("Spec Status", style="green")
-            table.add_column("Impl Status", style="blue")
+        # 4. Display Tables
+        self._display_design_table(design_nodes)
+        self._display_feature_table(feature_nodes)
+        self._display_component_table(component_nodes)
 
-            for item in items:
-                table.add_row(
-                    item["id"],
-                    item["type"],
-                    Text(item["spec_status"], style=item["spec_style"]),
-                    Text(item["impl_status"], style=item["impl_style"])
-                )
-            
-            self.console.print(table)
-            self.console.print("") # Empty line
-
-        # 4. Summary & Dashboard
+        # 5. Summary & Dashboard
         self._print_summary(stats)
-        self.generate_dashboard_file(stats, domain_groups, sorted_domains)
+        self.generate_dashboard_file(stats, design_nodes, feature_nodes, component_nodes)
 
-    def _calculate_status(self, node_id: str, in_prd: bool, in_spec: bool, prd_meta, spec_data) -> Dict:
-        """Helper to calculate status strings and flags."""
+    def _build_component_feature_map(self, yaml_nodes: Dict) -> Dict[str, List[str]]:
+        """Build reverse index from component_id to feature_ids."""
+        comp_to_feat = defaultdict(list)
+        for node_id, node_data in yaml_nodes.items():
+            if node_id.startswith("feat_"):
+                realized_by = node_data.get("realized_by", [])
+                if realized_by:
+                    for comp_id in realized_by:
+                        comp_to_feat[comp_id].append(node_id)
+        return comp_to_feat
+
+    def _build_node_info(self, node_id: str, in_prd: bool, in_spec: bool,
+                         prd_meta, node_data: Dict, comp_to_feat: Dict) -> Dict:
+        """Build comprehensive node information."""
         # Type Inference
         node_type = "Unknown"
         if node_id.startswith("dom_"): node_type = "Domain"
@@ -127,75 +105,148 @@ class ConsistencyMonitor:
         elif node_id.startswith("des_"): node_type = "Design"
         elif node_id.startswith("sub_"): node_type = "Substrate"
 
-        # Status Text
-        prd_text = "✅ Defined" if in_prd else "❌ Missing"
-        if in_prd: prd_text += f" (L{prd_meta.line_number})"
-        
-        spec_text = "✅ Implemented" if in_spec else "❌ Missing"
-        if in_spec: 
-            path = spec_data.get('_file_path', 'unknown')
-            spec_text += f"\n({path})"
-
-        # Markdown Text (Simplified)
-        md_prd = f"✅ (L{prd_meta.line_number})" if in_prd else "❌"
-        md_spec = f"✅ ({spec_data.get('_file_path','')})" if in_spec else "❌"
-
         # Spec Status (PRD vs YAML)
         spec_status = "Unknown"
-        spec_style = "white"
-        is_synced = False
-
+        spec_synced = False
         if in_prd and in_spec:
             spec_status = "Synced"
-            spec_style = "green"
-            is_synced = True
+            spec_synced = True
         elif in_prd and not in_spec:
-            spec_status = "PRD_Only"
-            spec_style = "yellow"
+            spec_status = "PRD Only"
         elif not in_prd and in_spec:
-            spec_status = "YAML_Only"
-            spec_style = "red"
+            spec_status = "YAML Only"
 
-        # Impl Status (Feature vs Component)
-        impl_status = "-"
-        impl_style = "dim"
-        
+        # Domain (for Features)
+        domain = node_data.get("domain", "-")
+
+        # Assignment Status (for Features)
+        assignment_status = "-"
+        assignment_count = 0
         if node_type == "Feature":
-            realized_by = spec_data.get("realized_by", [])
+            realized_by = node_data.get("realized_by", [])
             if realized_by:
-                impl_status = f"Assigned ({len(realized_by)})"
-                impl_style = "cyan"
+                assignment_status = f"Assigned ({len(realized_by)})"
+                assignment_count = len(realized_by)
             else:
-                impl_status = "Unassigned"
-                impl_style = "red"
-        
+                assignment_status = "Unassigned"
+
+        # Parent Feature (for Components)
+        parent_features = comp_to_feat.get(node_id, [])
+        parent_feature_str = ", ".join(parent_features) if parent_features else "-"
+
         return {
             "id": node_id,
             "type": node_type,
+            "domain": domain,
             "spec_status": spec_status,
-            "spec_style": spec_style,
-            "impl_status": impl_status,
-            "impl_style": impl_style,
-            "is_synced": is_synced,
-            "md_prd": md_prd,
-            "md_spec": md_spec
+            "spec_synced": spec_synced,
+            "assignment_status": assignment_status,
+            "assignment_count": assignment_count,
+            "parent_features": parent_feature_str,
         }
 
-    def _print_summary(self, stats: Dict):
-        self.console.print("[bold]Global Summary:[/bold]")
-        self.console.print(f"Total Nodes: {stats['total']}")
-        self.console.print(f"Synced: [green]{stats['synced']}[/green]")
-        self.console.print(f"Issues: [red]{stats['issues']}[/red]")
+    def _calculate_stats(self, design_nodes: List, feature_nodes: List, component_nodes: List) -> Dict:
+        """Calculate multi-dimensional statistics."""
+        all_nodes = design_nodes + feature_nodes + component_nodes
 
-    def generate_dashboard_file(self, stats: Dict, groups: Dict, sorted_domains: List[str]):
+        # Spec Sync stats
+        total_nodes = len(all_nodes)
+        spec_synced = sum(1 for n in all_nodes if n["spec_synced"])
+
+        # Feature Assignment stats
+        total_features = len(feature_nodes)
+        features_assigned = sum(1 for f in feature_nodes if f["assignment_count"] > 0)
+
+        # Calculate percentages
+        spec_sync_pct = int((spec_synced / total_nodes * 100)) if total_nodes > 0 else 0
+        feature_assign_pct = int((features_assigned / total_features * 100)) if total_features > 0 else 0
+
+        # Overall progress: Spec Sync (40%) + Feature Assignment (60%)
+        overall_pct = int(spec_sync_pct * 0.4 + feature_assign_pct * 0.6)
+
+        return {
+            "total_nodes": total_nodes,
+            "spec_synced": spec_synced,
+            "spec_sync_pct": spec_sync_pct,
+            "total_features": total_features,
+            "features_assigned": features_assigned,
+            "feature_assign_pct": feature_assign_pct,
+            "overall_pct": overall_pct,
+            "design_count": len(design_nodes),
+            "component_count": len(component_nodes),
+        }
+
+    def _display_design_table(self, nodes: List[Dict]):
+        """Display System Design table (Domain, Design, Product, Substrate)."""
+        table = Table(title="System Design (Domain & Design)", show_header=True, header_style="bold magenta")
+        table.add_column("Node ID", style="cyan")
+        table.add_column("Type", style="white")
+        table.add_column("Spec Status", style="green")
+
+        for item in nodes:
+            spec_style = "green" if item["spec_synced"] else "yellow" if "PRD" in item["spec_status"] else "red"
+            table.add_row(
+                item["id"],
+                item["type"],
+                Text(item["spec_status"], style=spec_style),
+            )
+
+        self.console.print(table)
+        self.console.print("")
+
+    def _display_feature_table(self, nodes: List[Dict]):
+        """Display Features table with Spec Status and Assignment Status."""
+        table = Table(title="Features", show_header=True, header_style="bold magenta")
+        table.add_column("Node ID", style="cyan")
+        table.add_column("Domain", style="white")
+        table.add_column("Spec Status", style="green")
+        table.add_column("Assignment Status", style="blue")
+
+        for item in nodes:
+            spec_style = "green" if item["spec_synced"] else "yellow" if "PRD" in item["spec_status"] else "red"
+            assign_style = "cyan" if item["assignment_count"] > 0 else "red"
+            table.add_row(
+                item["id"],
+                item["domain"],
+                Text(item["spec_status"], style=spec_style),
+                Text(item["assignment_status"], style=assign_style),
+            )
+
+        self.console.print(table)
+        self.console.print("")
+
+    def _display_component_table(self, nodes: List[Dict]):
+        """Display Components table with parent Feature reference."""
+        table = Table(title="Components", show_header=True, header_style="bold magenta")
+        table.add_column("Node ID", style="cyan")
+        table.add_column("Parent Feature", style="white")
+        table.add_column("Spec Status", style="green")
+
+        for item in nodes:
+            spec_style = "green" if item["spec_synced"] else "yellow" if "PRD" in item["spec_status"] else "red"
+            table.add_row(
+                item["id"],
+                item["parent_features"],
+                Text(item["spec_status"], style=spec_style),
+            )
+
+        self.console.print(table)
+        self.console.print("")
+
+    def _print_summary(self, stats: Dict):
+        self.console.print("[bold]Progress Summary:[/bold]")
+        self.console.print(f"Spec Sync: [green]{stats['spec_sync_pct']}%[/green] ({stats['spec_synced']}/{stats['total_nodes']})")
+        self.console.print(f"Feature Assignment: [cyan]{stats['feature_assign_pct']}%[/cyan] ({stats['features_assigned']}/{stats['total_features']})")
+        self.console.print(f"Overall: [bold yellow]{stats['overall_pct']}%[/bold yellow]")
+
+    def generate_dashboard_file(self, stats: Dict, design_nodes: List, feature_nodes: List, component_nodes: List):
         output_path = self.root_path / "PRODUCT_DASHBOARD.md"
         timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        
-        progress = 0
-        if stats['total'] > 0:
-            progress = int((stats['synced'] / stats['total']) * 100)
-        
-        bar = '█' * int(progress / 5) + '░' * (20 - int(progress / 5))
+
+        # Progress bars
+        spec_bar = '█' * int(stats['spec_sync_pct'] / 5) + '░' * (20 - int(stats['spec_sync_pct'] / 5))
+        assign_bar = '█' * int(stats['feature_assign_pct'] / 5) + '░' * (20 - int(stats['feature_assign_pct'] / 5))
+        overall_bar = '█' * int(stats['overall_pct'] / 5) + '░' * (20 - int(stats['overall_pct'] / 5))
 
         content = f"""# 📊 DevSpec Product Dashboard
 
@@ -204,41 +255,55 @@ class ConsistencyMonitor:
 
 ## 📈 Progress Overview
 
-**Completion**: {progress}%
-`[{bar}]`
+| Dimension | Progress | Detail |
+| :--- | :--- | :--- |
+| **Spec Sync** | `[{spec_bar}]` {stats['spec_sync_pct']}% | {stats['spec_synced']}/{stats['total_nodes']} nodes |
+| **Feature Assignment** | `[{assign_bar}]` {stats['feature_assign_pct']}% | {stats['features_assigned']}/{stats['total_features']} features |
+| **Overall** | `[{overall_bar}]` {stats['overall_pct']}% | Weighted: Spec(40%) + Assignment(60%) |
 
-| Metric | Count |
-| :--- | :--- |
-| **Total Nodes** | {stats['total']} |
-| **Synced** | {stats['synced']} |
-| **Issues** | {stats['issues']} |
+---
 
-## 📋 Detailed Status by Domain
+## 📐 System Design (Domain & Design)
+
+| Node ID | Type | Spec Status |
+| :--- | :--- | :--- |
 """
-        
-        for domain in sorted_domains:
-            title = domain if domain != "_general" else "General / Unassigned"
-            content += f"\n### {title}\n\n"
-            content += "| Node ID | Type | Spec Status | Impl Status |\n"
-            content += "| :--- | :--- | :--- | :--- |\n"
-            
-            for item in groups[domain]:
-                # Spec Icon
-                spec_icon = "🟢" if item['spec_status'] == "Synced" else "🔴" if item['spec_status'] == "YAML_Only" else "🟡"
-                
-                # Impl Icon
-                impl_icon = ""
-                if item['type'] == "Feature":
-                    impl_icon = "🟢" if "Assigned" in item['impl_status'] else "🔴"
-                
-                content += f"| `{item['id']}` | {item['type']} | {spec_icon} {item['spec_status']} | {impl_icon} {item['impl_status']} |\n"
+        for item in design_nodes:
+            spec_icon = "🟢" if item['spec_synced'] else "🟡" if "PRD" in item['spec_status'] else "🔴"
+            content += f"| `{item['id']}` | {item['type']} | {spec_icon} {item['spec_status']} |\n"
+
+        content += f"""
+---
+
+## 🎯 Features
+
+| Node ID | Domain | Spec Status | Assignment Status |
+| :--- | :--- | :--- | :--- |
+"""
+        for item in feature_nodes:
+            spec_icon = "🟢" if item['spec_synced'] else "🟡" if "PRD" in item['spec_status'] else "🔴"
+            assign_icon = "🟢" if item['assignment_count'] > 0 else "🔴"
+            content += f"| `{item['id']}` | {item['domain']} | {spec_icon} {item['spec_status']} | {assign_icon} {item['assignment_status']} |\n"
+
+        content += f"""
+---
+
+## 🔧 Components
+
+| Node ID | Parent Feature | Spec Status |
+| :--- | :--- | :--- |
+"""
+        for item in component_nodes:
+            spec_icon = "🟢" if item['spec_synced'] else "🟡" if "PRD" in item['spec_status'] else "🔴"
+            content += f"| `{item['id']}` | {item['parent_features']} | {spec_icon} {item['spec_status']} |\n"
 
         content += "\n---\n*Auto-generated by DevSpec Consistency Monitor*\n"
 
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(content)
-        
+
         self.console.print(f"\n[green]Dashboard updated: {output_path}[/green]")
+
 
 if __name__ == "__main__":
     monitor = ConsistencyMonitor(Path("."))

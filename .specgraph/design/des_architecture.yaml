@@ -31,3 +31,9 @@ guidelines:
     - "Check the 'User Value Test': Can a user verify this? If yes -> Feature. If no -> Component."
     - "Avoid 'CRUD' features. Instead of 'Manage Users', use 'User Registration' and 'Profile Management'."
     - "Always check `sub_meta_schema.yaml` for required fields before creating a YAML file."
+  
+  file_references:
+    - "MUST use full project paths when referencing files or documents."
+    - "❌ Bad: 'des_prompt_prd_writer.md'"
+    - "✅ Good: '.specgraph/design/des_prompt_prd_writer.md'"
+    - "Rationale: Avoids ambiguity and ensures accurate cross-references in the knowledge graph."

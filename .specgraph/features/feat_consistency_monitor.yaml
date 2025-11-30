@@ -4,13 +4,15 @@
 
 id: feat_consistency_monitor
 domain: dom_core
-source_anchor: "PRD.md#dom_core"
-intent: "Monitor and report the synchronization status between PRD (Intent) and SpecGraph (Structure) to ensure 'Spec-First' compliance."
+source_anchor: "PRD.md#feat_consistency_monitor"
+intent: "Monitor and report the synchronization status between PRD (Intent) and SpecGraph (Structure) using a layered dashboard structure."
 
 user_stories:
-  - "As a user, I want a 'Status Dashboard' that visualizes the synchronization state between PRD (Intent) and SpecGraph (Structure)."
-  - "As a user, I want to clearly identify 'Orphaned' components (Code without Spec) and 'Pending' features (Spec without Code) to prioritize work."
-  - "As a user, I want the report grouped by Domain so I can focus on specific areas of the system."
+  - "As a user, I want a 'Layered Dashboard' that shows progress at multiple dimensions: Spec Sync, Feature Assignment, and Overall."
+  - "As a user, I want separate tables for Domain/Design, Features, and Components to understand status at each architectural level."
+  - "As a user, I want Features table to show both Spec Status and Assignment Status (whether Components are assigned)."
+  - "As a user, I want Components table to show which Feature they belong to for traceability."
+  - "As a user, I want accurate progress calculation: Overall = Spec Sync (40%) + Feature Assignment (60%)."
 
 realized_by:
   - comp_consistency_monitor

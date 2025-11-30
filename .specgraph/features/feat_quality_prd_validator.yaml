@@ -1,0 +1,20 @@
+# Feature Definition: PRD Format Validator
+# Part of Quality Assurance (L0: dom_quality)
+
+id: feat_quality_prd_validator
+domain: dom_quality
+source_anchor: "PRD.md#feat_quality_prd_validator"
+intent: "Validate PRD.md structure and format against the rules defined in des_prompt_prd_writer.md."
+
+user_stories:
+  - "As an AI agent, I want to validate PRD.md after modification to ensure it follows the canonical structure."
+  - "As a user, I want to be notified if PRD.md has missing mandatory sections or incorrect anchor formats."
+  - "As a user, I want to ensure all features/components have proper anchors for synchronization."
+
+validation_rules:
+  - "Check mandatory sections: Product Vision, Bootstrapping Strategy, Core Domains, Technical Strategy"
+  - "Validate anchor format: <!-- id: {type}_{name} -->"
+  - "Verify bilingual rules: English headings, Chinese descriptions"
+  - "Check section hierarchy: H1 for title, H2 for main sections, H3 for domains"
+
+realized_by: []
