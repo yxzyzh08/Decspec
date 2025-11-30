@@ -1,24 +1,33 @@
-meta:
-  id: "sub_tech_stack"
-  type: "Substrate"
-  scope: ["all"]
+# Substrate Definition: Technology Stack
+# Source: PRD.md#des_tech_strategy
 
-content: |
-  # Technology Stack Requirements (Strict)
-  
-  1. **Language**: Python 3.10+ (Must use Type Hints)
-  2. **CLI Framework**: `typer` (with `rich` for output formatting)
-  3. **Path Handling**: `pathlib.Path` (STRICTLY FORBIDDEN: `os.path`)
-  4. **Config/Data**: `pyyaml` for YAML, `pydantic` for data validation.
-  5. **Clipboard**: `pyperclip`
-  
-  # Coding Style & Architecture
-  - **Functional first**: Prefer functions over classes for simple logic.
-  - **Docstrings**: All public functions must have docstrings.
-  - **Error Handling**: Use `typer.Exit(code=1)` for CLI errors.
-  
-  # Size Constraints (AI Friendly)
-  - **File Size**: 
-      - Target: < 400 lines (Ideal for context stuffing).
-      - Max: 800 lines (Hard limit to prevent AI hallucination).
-      - If a file grows too large, split it by responsibility (e.g., `core.py` -> `core_utils.py`, `core_models.py`).
+id: sub_tech_stack
+type: substrate
+name: "Technology Stack"
+description: "Standardized technology choices and constraints for DevSpec."
+source_anchor: "PRD.md#des_tech_strategy"
+
+environment:
+  manager: "uv"
+  python_version: ">=3.10"
+  command_runner: "uv run"
+
+core_libraries:
+  cli: 
+    name: "typer"
+    reason: "Modern, type-safe CLI builder."
+  ui: 
+    name: "rich"
+    reason: "Beautiful terminal output for trees and tables."
+  data_validation: 
+    name: "pydantic"
+    reason: "Robust data modeling."
+  database: 
+    name: "sqlmodel"
+    reason: "SQLAlchemy + Pydantic synergy."
+  parser: 
+    name: "pyyaml"
+    reason: "Human-readable spec format."
+  code_analysis:
+    name: "tree-sitter"
+    reason: "Fast, robust parsing for code scanning."

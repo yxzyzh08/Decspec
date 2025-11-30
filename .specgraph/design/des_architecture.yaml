@@ -1,0 +1,33 @@
+# Design Definition: System Architecture Concepts
+# Source: PRD.md#des_arch_concepts
+
+id: des_architecture
+type: design
+name: "System Architecture Concepts"
+description: "Defines the hierarchical structure (L0-L2) and granularity rules for DevSpec."
+source_anchor: "PRD.md#des_arch_concepts"
+
+concepts:
+  - level: "L0"
+    name: "Domain (领域)"
+    definition: "Systems' Strategic Scope (Product Area)."
+    granularity: "Max 5-7 per product. Corresponds to high-level business goals or functional areas."
+    examples: ["Core Engine", "CLI Interface"]
+
+  - level: "L1"
+    name: "Feature (特性)"
+    definition: "User Value Unit."
+    granularity: "Must be independently verifiable by a user. Avoid technical tasks (too small) or entire domains (too big)."
+    examples: ["Consistency Monitor", "Code Scanner", "Context Bubble"]
+
+  - level: "L2"
+    name: "Component (组件)"
+    definition: "Technical Building Block."
+    granularity: "Logical code module, class, or service with single responsibility."
+    examples: ["MarkdownParser", "TreeSitterEngine", "GraphDatabase"]
+
+guidelines:
+  feature_generation:
+    - "Check the 'User Value Test': Can a user verify this? If yes -> Feature. If no -> Component."
+    - "Avoid 'CRUD' features. Instead of 'Manage Users', use 'User Registration' and 'Profile Management'."
+    - "Always check `sub_meta_schema.yaml` for required fields before creating a YAML file."

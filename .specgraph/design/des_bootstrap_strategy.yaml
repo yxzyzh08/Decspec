@@ -1,0 +1,5 @@
+# Design: Bootstrapping Strategy
+id: des_bootstrap_strategy
+domain: dom_core
+source_anchor: "PRD.md#des_bootstrap_strategy"
+intent: "Define the 'Spec-First' self-bootstrapping strategy and evolution phases."

@@ -1,0 +1,15 @@
+# Component Definition: Markdown Parser
+# Part of Feature: feat_consistency_monitor
+# Validated against sub_meta_schema.yaml
+
+id: comp_markdown_parser
+type: module
+desc: "Parses Markdown files (specifically PRD.md) to extract structural anchors (<!-- id: ... -->) and section hierarchy."
+
+tech_stack:
+  - "python-std-re"
+  - "pathlib"
+
+api_contract:
+  - "parse_anchors(file_path: Path) -> Dict[str, SectionMeta]"
+  - "extract_section_text(file_path: Path, anchor_id: str) -> str"

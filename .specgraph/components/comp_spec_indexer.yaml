@@ -1,0 +1,17 @@
+# Component Definition: Spec Indexer
+# Part of Feature: feat_consistency_monitor
+# Validated against sub_meta_schema.yaml
+
+id: comp_spec_indexer
+type: module
+desc: "Scans the .specgraph directory, recursively loads YAML files, and builds an in-memory index of all nodes (Product, Domain, Feature, Component)."
+
+tech_stack:
+  - "pyyaml"
+  - "pathlib"
+  - "pydantic"
+
+api_contract:
+  - "index_all(root_path: Path) -> Dict[str, NodeData]"
+  - "get_node(node_id: str) -> Optional[NodeData]"
+  - "list_nodes_by_type(type: str) -> List[NodeData]"

@@ -1,0 +1,13 @@
+# Feature Definition: Context Assembler
+# Part of Core Engine (L0: dom_core)
+
+id: feat_context_assembler
+domain: dom_core
+source_anchor: "PRD.md#feat_context_assembler"
+intent: "Assemble the minimal sufficient context for AI agents based on the current task."
+
+user_stories:
+  - "As an agent, I want to receive relevant PRD sections and Code definitions for my assigned task."
+  - "As a user, I want to ensure the context fits within the token limit."
+
+realized_by: []

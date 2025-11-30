@@ -1,0 +1,14 @@
+# Feature Definition: SpecGraph Engine
+# Part of Core Engine (L0: dom_core)
+
+id: feat_specgraph_engine
+domain: dom_core
+source_anchor: "PRD.md#feat_specgraph_engine"
+intent: "Maintain the multi-level knowledge graph (L1-L3) of the system."
+
+user_stories:
+  - "As a system, I want to index Features, Components, and Code Symbols into a queryable graph."
+  - "As a developer, I want to query the relationship between a Requirement and its Implementation."
+
+realized_by:
+  - comp_spec_indexer

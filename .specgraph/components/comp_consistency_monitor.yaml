@@ -1,0 +1,20 @@
+# Component Definition: Consistency Monitor Service
+# Part of Feature: feat_consistency_monitor
+# Validated against sub_meta_schema.yaml
+
+id: comp_consistency_monitor
+type: service
+desc: "Business logic engine that orchestrates the comparison between PRD Intent (from MarkdownParser) and Spec Structure (from SpecIndexer)."
+
+dependencies:
+  - "comp_markdown_parser"
+  - "comp_spec_indexer"
+
+tech_stack:
+  - "rich"
+
+api_contract:
+  - "analyze_drift() -> DriftReport"
+  - "generate_domain_tables() -> List[rich.Table]"
+  - "generate_dashboard_file(output_path: Path) -> None"
+  - "validate_anchors_exist() -> List[MissingError]"

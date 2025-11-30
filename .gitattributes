@@ -1,3 +1,4 @@
 # Auto detect text files and normalize line endings
 * text=auto
 *.json text eol=lf
+*.py text eol=lf

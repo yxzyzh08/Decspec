@@ -1,0 +1,5 @@
+# Design: Technical Strategy
+id: des_tech_strategy
+domain: dom_core
+source_anchor: "PRD.md#des_tech_strategy"
+intent: "Define technical constraints: Python 3.10+, Typer, Rich, Tree-sitter, PyYAML."

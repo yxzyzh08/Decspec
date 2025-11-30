@@ -1,0 +1,14 @@
+# Feature Definition: Code Scanner
+# Part of Core Engine (L0: dom_core)
+
+id: feat_code_scanner
+domain: dom_core
+source_anchor: "PRD.md#feat_code_scanner"
+intent: "Analyze source code using Tree-sitter to maintain L3 (Implementation Layer)."
+
+user_stories:
+  - "As a system, I want to parse Python code to identify Classes and Functions."
+  - "As a system, I want to map code symbols back to their parent Components."
+
+realized_by:
+  - comp_spec_indexer

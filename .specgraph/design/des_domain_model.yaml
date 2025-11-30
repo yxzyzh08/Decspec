@@ -1,0 +1,5 @@
+# Design: Domain Model
+id: des_domain_model
+domain: dom_core
+source_anchor: "PRD.md#des_domain_model"
+intent: "Define the core domains (Core, CLI, Quality) and their responsibilities."

@@ -1,0 +1,60 @@
+# Meta-Schema Definition for DevSpec
+# This file defines the structure, granularity, and validation rules for all SpecGraph nodes.
+# It serves as the "Constitution" for the Knowledge Graph.
+
+id: sub_meta_schema
+type: substrate
+name: "Meta-Schema Definition"
+description: "Defines the schema, granularity, and validation rules for product, feature, component, and substrate nodes."
+
+# 1. 根节点规范 (Root Node)
+product_schema:
+  path: ".specgraph/product.yaml"
+  naming_convention: "product.yaml"
+  required_fields:
+    - id: "prod_{name}"
+    - name: "Product Name"
+    - version: "Semantic Versioning (x.y.z)"
+    - domains: "List of Domain objects {id, name, description}"
+    - description: "High-level product summary"
+
+# 2. 功能节点规范 (Feature Node - L1)
+feature_schema:
+  path_pattern: ".specgraph/features/feat_{snake_case_name}.yaml"
+  granularity:
+    definition: "A unit of user value that can be independently verified."
+    too_small: "Change button color, fix typo."
+    too_large: "The entire CLI system."
+    example_good: "CLI Command Dispatcher, Code Scanner, Context Bubble."
+  required_fields:
+    - id: "feat_{snake_case_name}"
+    - domain: "Must match a domain.id defined in product.yaml"
+    - source_anchor: "PRD.md#{anchor_id}"
+    - intent: "What problem does this solve? (The 'Why')"
+  optional_fields:
+    - user_stories: "List of strings"
+    - realized_by: "List of Component IDs"
+    - workflow: "Step-by-step interaction flow"
+
+# 3. 组件节点规范 (Component Node - L2)
+component_schema:
+  path_pattern: ".specgraph/components/comp_{snake_case_name}.yaml"
+  granularity:
+    definition: "A logical architectural building block."
+    example_good: "MarkdownParser, GitClient, TreeSitterEngine."
+  required_fields:
+    - id: "comp_{snake_case_name}"
+    - type: "module | class | function | service"
+    - desc: "Technical description"
+  optional_fields:
+    - tech_stack: "List of libraries/tools used"
+    - api_contract: "List of public methods/interfaces"
+    - dependencies: "List of other Component IDs"
+
+# 4. 基质节点规范 (Substrate Node)
+substrate_schema:
+  path_pattern: ".specgraph/substrate/sub_{snake_case_name}.yaml"
+  required_fields:
+    - id: "sub_{snake_case_name}"
+    - type: "substrate"
+    - name: "Human readable name"

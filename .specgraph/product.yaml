@@ -1,46 +1,15 @@
-# .specgraph/product.yaml
-meta:
-  id: "prod_devspec"
-  type: "Product"
-  version: "0.1.0"
-  status: "BOOTSTRAPPING"  # 当前处于自举阶段
-  prd_source: "documents/prd_v1.md"  # 原始 PRD 文档 (documents/ 是输入缓冲区)
-
-info:
-  name: "DevSpec"
-  codename: "Ouroboros (衔尾蛇)"
-  description: "专为超级个体设计的 AI 原生开发协航系统。"
-  vision: "通过极速串行流、会话沙箱和自举进化，打造人机结对编程的终极外骨骼。"
-
-# 关键文档索引 (PRD 映射)
-# 这些文档是 PRD 各章节的结构化表达
-references:
-  philosophy: "design/des_philosophy.yaml"        # PRD 1.2 核心哲学
-  roadmap: "design/des_roadmap.yaml"              # PRD 2.0 自举策略
-  ai_guidelines: "design/des_ai_guidelines.yaml"  # PRD 3.0 AI能力边界
-  architecture: "design/des_architecture_overview.yaml"  # 架构概览
-  dev_flow: "design/des_development_flow.yaml"    # PRD 10.0 开发流程
-  tech_stack: "substrate/sub_tech_stack.yaml"     # PRD 7.0 技术规范
-
-# 核心领域划分 (Domains)
-# 所有后续的 Feature 必须归属于以下某个 domain_id
+# Product Root Definition
+id: "prod_devspec"
+name: "DevSpec"
+version: "0.1.0"
+description: "A self-evolving, serial conversational intelligent pair-programming environment."
 domains:
-  # --- M1: 知识图谱引擎 ---
   - id: "dom_core"
-    name: "Core Engine (specgraph)"
-    description: "系统的基座。负责双模态存储(YAML/SQLite)、L3代码自动索引(Tree-sitter)以及图谱查询逻辑。"
-
-  # --- M2: 上下文装配器 ---
-  - id: "dom_context"
-    name: "Context Intelligence"
-    description: "AI 的导航仪。负责分析任务依赖、抓取契约、构建关注气泡(Focus Bubble)并管理 Token 预算。"
-
-  # --- M3 & M5: 交互与流程 ---
+    name: "Core Engine"
+    description: "The brain of the system, handling the knowledge graph and context."
   - id: "dom_cli"
-    name: "CLI & Workflow"
-    description: "用户交互层。包含任务会话管理(Session)、需求池(Backlog)以及命令行交互逻辑。"
-
-  # --- M4: 质量卫士 ---
+    name: "CLI Interface"
+    description: "The user interaction layer using Typer."
   - id: "dom_quality"
-    name: "Quality Guard"
-    description: "系统的免疫系统。负责一致性校验(Audit)、测试驱动验证以及代码合规检查。"
+    name: "Quality Assurance"
+    description: "Tools for testing and auditing code compliance."

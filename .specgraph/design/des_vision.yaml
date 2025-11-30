@@ -1,0 +1,5 @@
+# Design: Product Vision
+id: prod_vision
+domain: dom_core
+source_anchor: "PRD.md#prod_vision"
+intent: "Define the product vision: Serial Conversational Intelligent Pair-Programming Environment."

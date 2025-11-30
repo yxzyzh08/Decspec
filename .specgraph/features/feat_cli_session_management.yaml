@@ -1,0 +1,13 @@
+# Feature Definition: CLI Session Management
+# Part of CLI Interface (L0: dom_cli)
+
+id: feat_cli_session_management
+domain: dom_cli
+source_anchor: "PRD.md#feat_cli_session_management"
+intent: "Manage the lifecycle of user interaction sessions (Start, Commit, Abort)."
+
+user_stories:
+  - "As a user, I want to start a new task session."
+  - "As a system, I want to track the state of the current session."
+
+realized_by: []

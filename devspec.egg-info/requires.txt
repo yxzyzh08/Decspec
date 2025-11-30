@@ -1,5 +1,0 @@
-pyperclip>=1.11.0
-pyyaml>=6.0.3
-rich>=13.0.0
-sqlmodel>=0.0.22
-typer>=0.20.0

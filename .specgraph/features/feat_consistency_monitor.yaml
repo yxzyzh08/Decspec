@@ -1,0 +1,18 @@
+# Feature Definition: Consistency Monitor
+# Part of Core Engine (L0: dom_core)
+# Validated against sub_meta_schema.yaml
+
+id: feat_consistency_monitor
+domain: dom_core
+source_anchor: "PRD.md#dom_core"
+intent: "Monitor and report the synchronization status between PRD (Intent) and SpecGraph (Structure) to ensure 'Spec-First' compliance."
+
+user_stories:
+  - "As a user, I want a 'Status Dashboard' that visualizes the synchronization state between PRD (Intent) and SpecGraph (Structure)."
+  - "As a user, I want to clearly identify 'Orphaned' components (Code without Spec) and 'Pending' features (Spec without Code) to prioritize work."
+  - "As a user, I want the report grouped by Domain so I can focus on specific areas of the system."
+
+realized_by:
+  - comp_consistency_monitor
+  - comp_markdown_parser
+  - comp_spec_indexer
