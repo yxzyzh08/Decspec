@@ -47,7 +47,29 @@
 | :--- | :--- | :--- | :--- |
 | **Domain (领域)** | L0 | 系统的战略版图 (Strategic Scope)。 | 对应业务目标或职能。全系统不应超过 5-7 个。 |
 | **Feature (特性)** | L1 | 用户视角的价值单元 (User Value Unit)。 | 必须能被独立验收。避免太细（如"改颜色"）或太泛（如"核心功能"）。 |
-| **Component (组件)** | L2 | 架构视角的构建模块 (Building Block)。 | 逻辑上的代码集合 (Module/Class)。应具备单一职责。 |
+| **Component (组件)** | L2 | 代码的详细设计 (Detailed Design)。 | 包含 API 签名、伪代码逻辑、关键常量、输出文件格式。目标：AI 可还原 90-95% 代码。 |
+
+**Component 设计原则**:
+
+*   **设计即代码**: Component 是代码的详细设计文档，任意 AI (Claude/Gemini/GPT) 应能根据此设计还原 90-95% 的代码。
+*   **物理绑定**: 每个 Component 必须通过 `file_path` 字段关联到物理位置。
+*   **两种形态**:
+    *   **单文件模块**: `file_path: "devspec/core/parser.py"` — 适用于简单组件 (< 500 行)。
+    *   **包目录模块**: `file_path: "devspec/core/scanner/"` (以 `/` 结尾) — 适用于复杂组件，内部文件由该 Component 统一管理。
+
+**Component Design Schema (设计字段规范)**:
+
+| Field | Required | Description |
+| :--- | :--- | :--- |
+| `design.api` | ✅ 必填 | 公开接口定义：函数签名、参数、返回值、异常。 |
+| `design.logic` | ✅ 必填 | 伪代码逻辑：用自然语言+编号步骤描述实现流程。 |
+| `design.constants` | ⚠️ 条件必填 | 关键常量/模板：如果组件包含影响输出的常量则必填。 |
+| `design.output_files` | ⚠️ 条件必填 | 输出文件格式：如果组件生成文件则必填，需定义路径和格式。 |
+| `design.error_handling` | ❌ 可选 | 错误处理：关键错误场景及处理方式。 |
+
+**粒度边界 (Granularity Boundary)**:
+*   ✅ **包含**: 伪代码逻辑、关键常量、输入输出参数定义、输出文件格式。
+*   ❌ **不包含**: 具体实现代码、临时变量、内部私有函数细节。
 
 ### 2.4 Bootstrapping Strategy <!-- id: des_bootstrap_strategy -->
 
@@ -96,7 +118,36 @@ DevSpec 的核心架构分为三大领域：
 *   **UI/UX**: 使用 `Rich` 实现终端可视化 (Tree, Table, Markdown)。
 *   **Core Parsing**: 使用 `Tree-sitter` 进行高性能代码分析。
 *   **Storage**: `PyYAML` (Git 存储) + `SQLite/SQLModel` (运行时缓存)。
-*   **Tech Stack** <!-- id: sub_tech_stack -->: 项目依赖的核心技术栈管理。
+
+### 2.7 Knowledge Classification: Design vs Substrate <!-- id: des_knowledge_classification -->
+
+SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质)**。它们有明确的边界和用途：
+
+| 分类 | 定义 | 回答的问题 | AI 加载时机 |
+| :--- | :--- | :--- | :--- |
+| **Design** | 设计决策 (Why & What) | 为什么这样设计？目标是什么？ | 理解项目背景、做架构决策时 |
+| **Substrate** | 执行约束 (How & Constraints) | 怎么执行？有什么约束？ | 编写代码、验证规范时 |
+
+**Design 节点 (`.specgraph/design/`)** — 理解"为什么":
+*   `des_philosophy` - 核心理念 (Spec-First, Serial Flow 的原因)
+*   `des_domain_model` - 领域划分的设计思路
+*   `des_bootstrap_strategy` - 自举策略的设计决策
+*   `des_architecture` - 分层架构的目的和原则
+
+**Substrate 节点 (`.specgraph/substrate/`)** — 执行"怎么做":
+*   `sub_tech_stack` <!-- id: sub_tech_stack --> - 技术栈约束 (用 typer 不用 click，用 pathlib 不用 os.path)
+*   `sub_meta_schema` - YAML 结构验证规则 (必填字段、命名规范)
+*   `sub_coding_style` <!-- id: sub_coding_style --> - 编码规范 (命名、路径、注释、Type Hints)
+
+**AI 加载规则**:
+
+| 任务场景 | 加载的知识 |
+| :--- | :--- |
+| "帮我理解这个项目" | Design 节点 |
+| "帮我设计一个新 Feature" | Design + 相关 Feature YAML |
+| "帮我实现这个 Component" | Substrate + Component YAML |
+| "帮我创建新的 YAML 文件" | `sub_meta_schema` |
+| "帮我写/审查代码" | `sub_tech_stack` + `sub_coding_style` |
 
 ---
 
@@ -151,7 +202,18 @@ DevSpec 的核心架构分为三大领域：
 
 ### 4.1 Feature: Command Structure <!-- id: feat_cli_command_structure -->
 
-基于 Typer 的命令分发。
+基于 Typer 的命令分发系统，提供统一的 CLI 入口和命令注册机制。
+
+**Initial Commands (初始命令集)**:
+*   `devspec init` - 初始化项目，为 Claude Code 和 Gemini CLI 生成 slash command 文件。
+*   `devspec monitor` - 运行一致性检查，生成 Dashboard。
+*   `devspec tree` - 查看产品结构树（预留）。
+*   `devspec generate <feature_id>` - 为指定 Feature 生成上下文 Prompt（预留）。
+
+**Components**:
+*   **CLI App** <!-- id: comp_cli_app -->: Typer 应用主入口，负责命令注册与全局配置。
+*   **Init Command** <!-- id: comp_cli_init -->: `devspec init` 命令实现，生成 `.claude/commands/` 和 `.gemini/commands/` 下的 slash command 文件，使 AI CLI 可直接调用 DevSpec 命令。
+*   **Monitor Command** <!-- id: comp_cli_monitor -->: `devspec monitor` 命令实现，调用 ConsistencyMonitor。
 
 ### 4.2 Feature: Visual Output <!-- id: feat_cli_visual_output -->
 

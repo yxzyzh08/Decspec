@@ -1,17 +1,49 @@
 # Component Definition: Spec Indexer
-# Part of Feature: feat_consistency_monitor
+# Part of Feature: feat_consistency_monitor, feat_specgraph_engine, feat_code_scanner
 # Validated against sub_meta_schema.yaml
 
 id: comp_spec_indexer
 type: module
-desc: "Scans the .specgraph directory, recursively loads YAML files, and builds an in-memory index of all nodes (Product, Domain, Feature, Component)."
+desc: "扫描 .specgraph 目录，递归加载 YAML 文件，构建所有节点 (Product, Domain, Feature, Component) 的内存索引。"
+file_path: "devspec/core/spec_indexer.py"
 
 tech_stack:
-  - "pyyaml"
-  - "pathlib"
-  - "pydantic"
+  - pyyaml
+  - pathlib
 
-api_contract:
-  - "index_all(root_path: Path) -> Dict[str, NodeData]"
-  - "get_node(node_id: str) -> Optional[NodeData]"
-  - "list_nodes_by_type(type: str) -> List[NodeData]"
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "class SpecIndexer"
+      desc: "Spec 图谱索引器，负责构建内存中的知识图谱"
+    - signature: "def __init__(self, root_path: Path)"
+      desc: "初始化索引器"
+      params:
+        - name: "root_path"
+          type: "Path"
+          desc: "项目根目录"
+    - signature: "def index_all(self) -> Dict[str, Dict[str, Any]]"
+      desc: "遍历 .specgraph 目录，加载所有 YAML 节点"
+      returns:
+        type: "Dict"
+        desc: "节点 ID 到节点数据的映射字典"
+
+  # 伪代码逻辑
+  logic: |
+    1. 检查 .specgraph 目录是否存在，不存在则返回空字典
+    2. 初始化 index 字典
+    3. 递归遍历 .specgraph 下所有 .yaml 文件 (rglob):
+       3.1 跳过包含 ".runtime" 的路径
+       3.2 读取并解析 YAML 内容
+       3.3 如果包含 "id" 字段:
+           - 注入元数据 "_file_path" (相对路径)
+           - 存入 index [node_id] = data
+           - [特殊处理] 如果是 product.yaml 且包含 "domains" 列表:
+             - 遍历 domains 列表
+             - 为每个 domain 创建虚拟节点 (Virtual Node)
+             - 注入元数据 "_is_virtual": True, "_file_path": "...#domains"
+             - 存入 index [domain_id] = domain_data
+       3.4 捕获并打印解析错误，不中断流程
+    4. 返回 index 字典
+

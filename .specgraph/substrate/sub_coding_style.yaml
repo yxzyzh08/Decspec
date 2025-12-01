@@ -1,0 +1,118 @@
+# Substrate Definition: Coding Style
+# Type: Substrate (How & Constraints)
+# Purpose: AI 编写代码时必须遵循的规范约束
+
+id: sub_coding_style
+type: substrate
+name: "Coding Style"
+source_anchor: "PRD.md#sub_coding_style"
+description: "定义 DevSpec 项目的编码规范，AI 在编写/审查代码时必须加载此文件。"
+
+# ============================================================
+# Python 代码规范
+# ============================================================
+python:
+  version: ">=3.10"
+
+  type_hints:
+    required: true
+    desc: "所有公开函数必须有完整的 Type Hints"
+    example:
+      good: "def parse(file_path: Path) -> Dict[str, Any]:"
+      bad: "def parse(file_path):"
+
+  imports:
+    order:
+      - "标准库 (pathlib, typing, re, etc.)"
+      - "第三方库 (typer, rich, pyyaml, etc.)"
+      - "项目内部模块 (devspec.core, devspec.commands, etc.)"
+    rules:
+      - "每组 import 之间空一行"
+      - "同组内按字母排序"
+
+  naming:
+    modules: "snake_case (e.g., markdown_parser.py)"
+    classes: "PascalCase (e.g., ConsistencyMonitor)"
+    functions: "snake_case (e.g., parse_anchors)"
+    constants: "UPPER_SNAKE_CASE (e.g., DEFAULT_ENCODING)"
+    private: "单下划线前缀 (e.g., _internal_helper)"
+
+  docstrings:
+    required_for: "所有公开类和函数"
+    format: "Google Style"
+    example: |
+      def parse_anchors(file_path: Path) -> Dict[str, SectionMeta]:
+          """
+          解析 Markdown 文件中的锚点。
+
+          Args:
+              file_path: Markdown 文件的相对路径
+
+          Returns:
+              anchor_id 到 SectionMeta 的映射字典
+
+          Raises:
+              FileNotFoundError: 文件不存在时抛出
+          """
+
+# ============================================================
+# 路径规范 (Path Conventions)
+# ============================================================
+paths:
+  library:
+    use: "pathlib.Path"
+    forbidden: "os.path"
+    reason: "pathlib 更现代、类型安全、跨平台"
+    example:
+      good: "from pathlib import Path; config_path = Path('.specgraph') / 'config.yaml'"
+      bad: "import os; config_path = os.path.join('.specgraph', 'config.yaml')"
+
+  file_references:
+    rule: "在 YAML 和文档中引用文件时，必须使用完整项目路径"
+    example:
+      good: ".specgraph/design/des_prompt_prd_writer.md"
+      bad: "des_prompt_prd_writer.md"
+    reason: "避免歧义，确保知识图谱中的引用准确"
+
+# ============================================================
+# 文件规范 (File Conventions)
+# ============================================================
+files:
+  encoding: "utf-8"
+  max_lines: 500
+  line_length: 100
+
+  when_exceeds_max_lines: |
+    当文件超过 500 行时：
+    1. 考虑拆分为多个文件
+    2. 将 Component 从单文件升级为包目录
+    3. 更新对应的 Component YAML (file_path 改为目录路径)
+
+# ============================================================
+# 错误处理规范
+# ============================================================
+error_handling:
+  principles:
+    - "优先使用具体异常类型，避免裸 except"
+    - "在边界层（CLI、API）捕获异常并友好提示"
+    - "内部模块让异常向上传播"
+
+  example:
+    good: |
+      try:
+          data = yaml.safe_load(file.read_text())
+      except yaml.YAMLError as e:
+          raise ConfigParseError(f"Invalid YAML: {e}") from e
+    bad: |
+      try:
+          data = yaml.safe_load(file.read_text())
+      except:
+          pass
+
+# ============================================================
+# 依赖规范 (参考 sub_tech_stack.yaml)
+# ============================================================
+dependencies:
+  rule: "只使用 sub_tech_stack.yaml 中定义的库"
+  check_before_import: true
+  add_new_dependency: "需要先更新 sub_tech_stack.yaml 并说明原因"

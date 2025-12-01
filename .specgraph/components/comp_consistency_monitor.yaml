@@ -1,20 +1,65 @@
-# Component Definition: Consistency Monitor Service
+# Component Definition: Consistency Monitor
 # Part of Feature: feat_consistency_monitor
 # Validated against sub_meta_schema.yaml
 
 id: comp_consistency_monitor
-type: service
-desc: "Business logic engine that orchestrates the comparison between PRD Intent (from MarkdownParser) and Spec Structure (from SpecIndexer)."
-
-dependencies:
-  - "comp_markdown_parser"
-  - "comp_spec_indexer"
+type: module
+desc: "核心比对逻辑，协调 MarkdownParser 和 SpecIndexer，比较 PRD Intent 与 Spec Structure，生成分层 Dashboard。"
+file_path: "devspec/core/consistency.py"
 
 tech_stack:
-  - "rich"
+  - rich
+  - pathlib
 
-api_contract:
-  - "analyze_drift() -> DriftReport"
-  - "generate_domain_tables() -> List[rich.Table]"
-  - "generate_dashboard_file(output_path: Path) -> None"
-  - "validate_anchors_exist() -> List[MissingError]"
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "class ConsistencyMonitor"
+      desc: "一致性监控核心类，负责比对 PRD 和 SpecGraph"
+    - signature: "def __init__(self, root_path: Path)"
+      desc: "初始化监控器，加载 Parser 和 Indexer"
+    - signature: "def run_check(self) -> None"
+      desc: "执行完整检查流程，输出报告并生成 Dashboard"
+
+  # 伪代码逻辑
+  logic: |
+    1. 打印开始信息
+    2. [提取阶段]
+       - 调用 MarkdownParser 解析 PRD.md 锚点 -> prd_anchors
+       - 调用 SpecIndexer 索引 .specgraph -> yaml_nodes
+       - 获取所有唯一 ID 集合 (all_ids)
+    3. [分类阶段]
+       - 初始化列表: design_nodes, feature_nodes, component_nodes
+       - 构建反向索引: Component -> Parent Features (通过 realized_by 字段)
+       - 遍历 all_ids:
+         - 判断节点存在性 (in_prd, in_spec)
+         - 推断节点类型 (根据前缀 dom_, feat_, comp_ 等)
+         - 计算状态 (Synced, PRD Only, YAML Only)
+         - [Feature特有] 计算 Assignment Status (realized_by 数量)
+         - [Component特有] 获取 Parent Features
+         - 构建 node_info 字典并归类到对应列表
+       - 对所有列表按 ID 排序
+    4. [统计阶段]
+       - 计算 Spec Sync 率 (Synced节点数 / 总节点数)
+       - 计算 Feature Assignment 率 (已分配Feature数 / 总Feature数)
+       - 计算 Overall 进度 (加权平均: Spec 40% + Assignment 60%)
+    5. [展示阶段]
+       - 使用 Rich Table 分别展示 Design, Feature, Component 表格
+       - 使用颜色编码状态 (绿=Synced, 黄=PRD Only, 红=YAML Only)
+    6. [生成阶段]
+       - 生成 PRODUCT_DASHBOARD.md 内容
+       - 包含: 进度条, 统计摘要, 三张详细状态表
+       - 写入文件并打印成功信息
+
+  # 依赖关系
+  dependencies:
+    - comp_markdown_parser
+    - comp_spec_indexer
+    - comp_cli_app (for Rich Console)
+
+  # 输出文件格式
+  output_files:
+    - path: "PRODUCT_DASHBOARD.md"
+      format: "Markdown with Progress Bars and Tables"
+      encoding: "utf-8"

@@ -1,0 +1,34 @@
+# Component Definition: Monitor Command
+# Part of feat_cli_command_structure
+# Validated against sub_meta_schema.yaml
+
+id: comp_cli_monitor
+type: module
+desc: "`devspec monitor` 命令实现，调用 ConsistencyMonitor 执行一致性检查并生成 Dashboard。"
+source_anchor: "PRD.md#comp_cli_monitor"
+
+tech_stack:
+  - typer
+  - rich
+
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "def monitor() -> None"
+      desc: "执行 PRD-Spec 一致性检查，输出分层报告并生成 PRODUCT_DASHBOARD.md"
+      params: []
+      returns:
+        type: "None"
+        desc: "无返回值，直接输出到控制台并生成文件"
+
+  # 伪代码逻辑
+  logic: |
+    1. 获取当前工作目录 (Path("."))
+    2. 初始化 ConsistencyMonitor 实例 (传入 root_path)
+    3. 调用 monitor_instance.run_check() 执行检查
+
+  # 依赖关系
+  dependencies:
+    - comp_consistency_monitor
+

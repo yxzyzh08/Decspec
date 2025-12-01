@@ -4,12 +4,50 @@
 
 id: comp_markdown_parser
 type: module
-desc: "Parses Markdown files (specifically PRD.md) to extract structural anchors (<!-- id: ... -->) and section hierarchy."
+desc: "解析 Markdown 文件 (PRD.md)，提取结构化锚点 (<!-- id: ... -->) 和章节层级信息。"
+file_path: "devspec/core/markdown_parser.py"
 
 tech_stack:
-  - "python-std-re"
-  - "pathlib"
+  - re (python-std)
+  - pathlib
 
-api_contract:
-  - "parse_anchors(file_path: Path) -> Dict[str, SectionMeta]"
-  - "extract_section_text(file_path: Path, anchor_id: str) -> str"
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "class MarkdownParser"
+      desc: "Markdown 解析器，负责提取锚点和结构信息"
+    - signature: "def __init__(self, root_path: Path)"
+      desc: "初始化解析器"
+    - signature: "def parse_anchors(self, file_path: Path) -> Dict[str, SectionMeta]"
+      desc: "解析指定 Markdown 文件中的锚点"
+      params:
+        - name: "file_path"
+          type: "Path"
+          desc: "相对于 root_path 的文件路径"
+      returns:
+        type: "Dict[str, SectionMeta]"
+        desc: "anchor_id 到 SectionMeta(title, anchor_id, line_number) 的映射"
+
+  # 关键常量
+  constants:
+    ANCHOR_PATTERN: "re.compile(r'<!--\\s*id:\\s*([a-zA-Z0-9_]+)\\s*-->')"
+    HEADER_PATTERN: "re.compile(r'^(#+)\\s+(.*)')"
+
+  # 伪代码逻辑
+  logic: |
+    1. 拼接完整路径 (root_path / file_path) 并检查是否存在
+    2. 读取文件所有行 (utf-8)
+    3. 遍历每一行 (带行号 i):
+       3.1 使用 ANCHOR_PATTERN 匹配当前行
+       3.2 如果匹配成功:
+           - 提取 anchor_id (group 1)
+           - 使用 HEADER_PATTERN 匹配同一行，尝试提取标题
+           - 如果是标题行:
+             - 提取 raw_title (group 2)
+             - 从 raw_title 中移除 anchor 字符串，得到纯净 title
+           - 否则 title = "Unknown Section"
+           - 创建 SectionMeta 对象 (title, anchor_id, line_number=i+1)
+           - 存入 results 字典
+    4. 返回 results 字典
+

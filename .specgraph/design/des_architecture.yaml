@@ -1,39 +1,47 @@
 # Design Definition: System Architecture Concepts
-# Source: PRD.md#des_arch_concepts
+# Type: Design (Why & What)
+# Purpose: 解释分层架构的设计决策和目的
 
 id: des_architecture
 type: design
 name: "System Architecture Concepts"
-description: "Defines the hierarchical structure (L0-L2) and granularity rules for DevSpec."
-source_anchor: "PRD.md#des_arch_concepts"
+source_anchor: "PRD.md#des_architecture"
+
+intent: "定义 DevSpec 的分层架构 (L0-L2)，解释为什么采用这种层级划分。"
+
+rationale: |
+  采用 L0-L1-L2 三层架构的原因：
+  1. **关注点分离**: Domain 关注业务边界，Feature 关注用户价值，Component 关注技术实现。
+  2. **可追溯性**: 从需求到代码的完整链路，支持双向追溯。
+  3. **AI 友好**: 层级清晰，AI 可以根据任务类型加载对应层级的上下文。
+  4. **粒度控制**: 每层有明确的粒度标准，防止图谱熵增。
 
 concepts:
   - level: "L0"
     name: "Domain (领域)"
-    definition: "Systems' Strategic Scope (Product Area)."
-    granularity: "Max 5-7 per product. Corresponds to high-level business goals or functional areas."
-    examples: ["Core Engine", "CLI Interface"]
+    definition: "系统的战略版图 (Strategic Scope)。"
+    why: "将系统按业务目标或职能划分，便于团队分工和模块边界控制。"
+    granularity: "全系统不应超过 5-7 个，对应高层业务目标。"
+    examples: ["Core Engine", "CLI Interface", "Quality Assurance"]
 
   - level: "L1"
     name: "Feature (特性)"
-    definition: "User Value Unit."
-    granularity: "Must be independently verifiable by a user. Avoid technical tasks (too small) or entire domains (too big)."
-    examples: ["Consistency Monitor", "Code Scanner", "Context Bubble"]
+    definition: "用户视角的价值单元 (User Value Unit)。"
+    why: "以用户可感知的价值为单位划分，便于需求追踪和验收。"
+    granularity: "必须能被独立验收。避免太细（如'改颜色'）或太泛（如'核心功能'）。"
+    examples: ["Consistency Monitor", "Code Scanner", "Context Assembler"]
 
   - level: "L2"
     name: "Component (组件)"
-    definition: "Technical Building Block."
-    granularity: "Logical code module, class, or service with single responsibility."
-    examples: ["MarkdownParser", "TreeSitterEngine", "GraphDatabase"]
+    definition: "代码的详细设计 (Detailed Design)。"
+    why: "将技术实现与用户需求解耦，支持 AI 精确生成代码。"
+    granularity: "一个 Component 对应一个内聚的 Python 模块，包含完整的设计信息让 AI 可还原 90-95% 代码。"
+    examples: ["MarkdownParser", "SpecIndexer", "ConsistencyMonitor"]
 
-guidelines:
-  feature_generation:
-    - "Check the 'User Value Test': Can a user verify this? If yes -> Feature. If no -> Component."
-    - "Avoid 'CRUD' features. Instead of 'Manage Users', use 'User Registration' and 'Profile Management'."
-    - "Always check `sub_meta_schema.yaml` for required fields before creating a YAML file."
-  
-  file_references:
-    - "MUST use full project paths when referencing files or documents."
-    - "❌ Bad: 'des_prompt_prd_writer.md'"
-    - "✅ Good: '.specgraph/design/des_prompt_prd_writer.md'"
-    - "Rationale: Avoids ambiguity and ensures accurate cross-references in the knowledge graph."
+principles:
+  - name: "User Value Test"
+    desc: "判断粒度的方法：用户能验收吗？能 → Feature，不能 → Component。"
+  - name: "Physical Binding"
+    desc: "Component 必须物理绑定到文件，支持 Spec ↔ Code 双向追溯。"
+  - name: "Design as Code"
+    desc: "Component 是代码的设计文档，不是简单的描述。"

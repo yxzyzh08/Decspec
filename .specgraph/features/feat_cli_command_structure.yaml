@@ -1,13 +1,28 @@
 # Feature Definition: CLI Command Structure
 # Part of CLI Interface (L0: dom_cli)
+# Validated against sub_meta_schema.yaml
 
 id: feat_cli_command_structure
 domain: dom_cli
 source_anchor: "PRD.md#feat_cli_command_structure"
-intent: "Provide a robust command dispatching system using Typer."
+intent: "提供基于 Typer 的统一 CLI 入口和命令注册机制，使用户能够通过命令行调用 DevSpec 的各项功能。"
 
 user_stories:
-  - "As a user, I want to execute commands like `devspec sync` and `devspec status`."
-  - "As a developer, I want to easily add new commands with type-safe arguments."
+  - "As a user, I want to run `devspec init` to generate slash command files for Claude Code and Gemini CLI."
+  - "As a user, I want to run `devspec monitor` to check PRD-Spec consistency and generate a dashboard."
+  - "As a user, I want to run `devspec tree` to view the product structure (reserved)."
+  - "As a user, I want to run `devspec generate <feature_id>` to generate context prompts for a feature (reserved)."
+  - "As a developer, I want to easily add new commands with type-safe arguments using Typer."
 
-realized_by: []
+workflow:
+  - step: 1
+    action: "User invokes `devspec <command> [args]` from terminal."
+  - step: 2
+    action: "Typer app dispatches to the appropriate command handler."
+  - step: 3
+    action: "Command handler executes logic and outputs results via Rich."
+
+realized_by:
+  - comp_cli_app
+  - comp_cli_init
+  - comp_cli_monitor

@@ -1,0 +1,73 @@
+# Component Definition: Init Command
+# Part of feat_cli_command_structure
+# Validated against sub_meta_schema.yaml
+
+id: comp_cli_init
+type: module
+desc: "`devspec init` 命令实现，为 Claude Code 和 Gemini CLI 生成 slash command 文件，使 AI CLI 可直接调用 DevSpec 命令。"
+file_path: "devspec/commands/init.py"
+
+tech_stack:
+  - typer
+  - rich
+  - pathlib
+
+dependencies:
+  - comp_cli_app
+
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "def init() -> None"
+      desc: "生成 AI CLI 的 slash command 文件"
+      params: []
+      returns:
+        type: "None"
+        desc: "无返回值，通过 side effect 生成文件"
+
+  # 伪代码逻辑
+  logic: |
+    1. 初始化 Rich console 对象
+    2. 定义模板常量:
+       - CLAUDE_MONITOR_TEMPLATE: Claude Code 的 slash command 模板 (Markdown)
+       - GEMINI_MONITOR_TEMPLATE: Gemini CLI 的 slash command 模板 (TOML)
+    3. 定义 commands 列表，每项包含 {path, content, cli_name}
+    4. 打印开始信息 "DevSpec Init: Generating AI CLI slash commands..."
+    5. 遍历 commands 列表:
+       5.1 检查文件是否存在 (Path.exists())
+           - 如果存在: 打印跳过信息 "⚠ {cli_name}: {path} already exists, skipping." 并继续下一项
+       5.2 创建父目录 (Path.mkdir(parents=True, exist_ok=True))
+       5.3 写入模板内容 (Path.write_text, encoding=utf-8)
+       5.4 打印成功信息 "✓ {cli_name}: {path}"
+    6. 打印使用说明:
+       - Claude Code: /devspec-monitor
+       - Gemini CLI: /devspec-monitor
+
+  # 关键常量
+  constants:
+    CLAUDE_MONITOR_TEMPLATE: |
+      ---
+      allowed-tools: Bash(uv run devspec monitor:*)
+      description: Run DevSpec consistency monitor and generate dashboard
+      ---
+      # DevSpec Monitor
+
+      Run the consistency check to verify alignment between PRD (Markdown) and SpecGraph (YAML).
+
+      **Usage**
+      ! uv run devspec monitor $ARGUMENTS
+
+    GEMINI_MONITOR_TEMPLATE: |
+      description = "Run DevSpec consistency monitor and generate dashboard"
+      prompt = """
+      Run the DevSpec consistency monitor to check alignment between PRD and SpecGraph.
+      Command: `uv run devspec monitor`
+      """
+
+  # 输出文件格式
+  output_files:
+    - path: ".claude/commands/devspec-monitor.md"
+    - path: ".gemini/commands/devspec-monitor.toml"
+      format: "TOML with description and prompt"
+      encoding: "utf-8"

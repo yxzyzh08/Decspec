@@ -1,0 +1,11 @@
+Metadata-Version: 2.4
+Name: devspec
+Version: 0.1.0
+Summary: Self-bootstrapping development specification system for AI-assisted programming.
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: pyperclip>=1.11.0
+Requires-Dist: pyyaml>=6.0.3
+Requires-Dist: rich>=13.0.0
+Requires-Dist: sqlmodel>=0.0.22
+Requires-Dist: typer>=0.20.0

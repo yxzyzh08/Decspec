@@ -5,7 +5,26 @@
 id: sub_meta_schema
 type: substrate
 name: "Meta-Schema Definition"
-description: "Defines the schema, granularity, and validation rules for product, feature, component, and substrate nodes."
+description: "Defines the schema, granularity, and validation rules for product, feature, component, design, and substrate nodes."
+source_anchor: "PRD.md#sub_meta_schema"
+
+# ============================================================
+# 知识分类 (Knowledge Classification)
+# ============================================================
+# SpecGraph 中的知识分为两类：Design 和 Substrate
+#
+# Design (设计) - Why & What:
+#   - 回答"为什么这样设计？目标是什么？"
+#   - AI 加载时机：理解项目背景、做架构决策时
+#   - 存储位置：.specgraph/design/
+#   - 示例：des_philosophy, des_domain_model, des_architecture
+#
+# Substrate (基质) - How & Constraints:
+#   - 回答"怎么执行？有什么约束？"
+#   - AI 加载时机：编写代码、验证规范时
+#   - 存储位置：.specgraph/substrate/
+#   - 示例：sub_tech_stack, sub_meta_schema, sub_coding_style
+# ============================================================
 
 # 1. 根节点规范 (Root Node)
 product_schema:
@@ -37,24 +56,146 @@ feature_schema:
     - workflow: "Step-by-step interaction flow"
 
 # 3. 组件节点规范 (Component Node - L2)
+# 设计原则：Component 是代码的详细设计，目标是让任意 AI 能还原 90-95% 的代码
 component_schema:
   path_pattern: ".specgraph/components/comp_{snake_case_name}.yaml"
+
+  # 3.1 粒度定义
   granularity:
-    definition: "A logical architectural building block."
-    example_good: "MarkdownParser, GitClient, TreeSitterEngine."
+    definition: "A cohesive Python module - either a single .py file or a package directory."
+    forms:
+      single_file:
+        desc: "简单组件 (< 500 行)，使用单个 .py 文件"
+        example: "devspec/core/markdown_parser.py"
+      package_dir:
+        desc: "复杂组件，使用包目录 (含 __init__.py)，内部文件由该 Component 统一管理"
+        example: "devspec/core/scanner/"
+        note: "file_path 以 / 结尾表示包目录"
+    example_good:
+      - "devspec/core/markdown_parser.py"
+      - "devspec/core/scanner/"
+    example_bad: "将整个 devspec/core/ 目录作为一个 Component"
+
+  # 3.2 必填字段
   required_fields:
     - id: "comp_{snake_case_name}"
-    - type: "module | class | function | service"
-    - desc: "Technical description"
+    - type: "module"
+    - desc: "Technical description (技术描述)"
+    - file_path: "单文件路径 (.py) 或包目录路径 (以 / 结尾)"
+    - design: "详细设计 (见 design_schema)"
+
+  # 3.3 可选字段
   optional_fields:
     - tech_stack: "List of libraries/tools used"
-    - api_contract: "List of public methods/interfaces"
     - dependencies: "List of other Component IDs"
 
-# 4. 基质节点规范 (Substrate Node)
+  # 3.4 详细设计规范 (design 字段内部结构)
+  design_schema:
+    description: |
+      design 字段是 Component 的核心，定义代码的详细设计。
+      目标：让任意 AI (Claude/Gemini/GPT) 能根据此设计还原 90-95% 的代码。
+      原则：止步于伪代码和关键常量，不写具体实现代码。
+
+    fields:
+      # 公开接口定义 (必填)
+      api:
+        desc: "公开函数/类的签名与契约"
+        required: true
+        structure:
+          - signature: "函数签名，如 def foo(x: int) -> str"
+          - desc: "功能描述"
+          - params: "参数列表 [{name, type, desc}]"
+          - returns: "返回值 {type, desc}"
+          - raises: "可能抛出的异常 (可选)"
+
+      # 伪代码逻辑 (必填)
+      logic:
+        desc: "实现逻辑的伪代码描述，用自然语言+编号步骤"
+        required: true
+        example: |
+          1. 初始化 console 对象
+          2. 定义模板常量 CLAUDE_TEMPLATE, GEMINI_TEMPLATE
+          3. 遍历 commands 列表:
+             3.1 创建父目录 (Path.mkdir)
+             3.2 写入模板内容 (Path.write_text)
+             3.3 打印成功信息
+          4. 打印使用说明
+
+      # 关键常量 (条件必填：如果有常量则必填)
+      constants:
+        desc: "影响输出结果的关键常量、模板、配置"
+        required: "conditional - 如果组件包含重要常量/模板则必填"
+        example:
+          TEMPLATE: |
+            ---
+            description: xxx
+            ---
+            ! uv run devspec monitor
+
+      # 输出文件格式 (条件必填：如果输出是文件则必填)
+      output_files:
+        desc: "如果组件生成文件，必须定义文件格式"
+        required: "conditional - 如果输出包含文件则必填"
+        structure:
+          - path: "文件路径模式"
+          - format: "文件格式描述或完整模板"
+          - encoding: "编码 (默认 utf-8)"
+
+      # 错误处理 (可选)
+      error_handling:
+        desc: "关键错误场景及处理方式"
+        required: false
+        structure:
+          - condition: "错误条件"
+          - action: "处理方式"
+
+# 4. 设计节点规范 (Design Node)
+# Design 回答 "Why & What" - 设计决策的原因和目标
+design_node_schema:
+  path_pattern: ".specgraph/design/des_{snake_case_name}.yaml"
+  purpose: |
+    Design 节点记录设计决策，帮助 AI 理解项目背景和架构目的。
+    AI 在以下场景加载 Design：
+    - 理解项目整体背景
+    - 做架构级别的决策
+    - 设计新的 Feature
+  required_fields:
+    - id: "des_{snake_case_name}"
+    - type: "design"
+    - name: "Human readable name"
+    - intent: "这个设计决策要解决什么问题？"
+  optional_fields:
+    - source_anchor: "PRD.md#{anchor_id}"
+    - rationale: "为什么做这个决策？有哪些替代方案被否决？"
+    - principles: "从这个决策衍生的原则列表"
+  examples:
+    - id: "des_philosophy"
+      content: "核心理念 - 为什么选择 Spec-First？为什么是 Serial Flow？"
+    - id: "des_architecture"
+      content: "分层架构 - 为什么分 L0/L1/L2？每层的目的是什么？"
+
+# 5. 基质节点规范 (Substrate Node)
+# Substrate 回答 "How & Constraints" - 执行约束和验证规则
 substrate_schema:
   path_pattern: ".specgraph/substrate/sub_{snake_case_name}.yaml"
+  purpose: |
+    Substrate 节点定义执行约束，帮助 AI 在编码时遵循规范。
+    AI 在以下场景加载 Substrate：
+    - 编写代码时 (加载 sub_tech_stack, sub_coding_style)
+    - 创建/验证 YAML 文件时 (加载 sub_meta_schema)
+    - 审查代码合规性时
   required_fields:
     - id: "sub_{snake_case_name}"
     - type: "substrate"
     - name: "Human readable name"
+  optional_fields:
+    - source_anchor: "PRD.md#{anchor_id}"
+    - constraints: "具体的约束规则列表"
+    - validation_rules: "验证规则 (用于自动化检查)"
+  examples:
+    - id: "sub_tech_stack"
+      content: "技术栈约束 - 用 typer 不用 click，用 pathlib 不用 os.path"
+    - id: "sub_coding_style"
+      content: "编码规范 - 命名规则、Type Hints 要求、文件路径规范"
+    - id: "sub_meta_schema"
+      content: "YAML 结构规范 - 各类节点的必填字段、命名约定"

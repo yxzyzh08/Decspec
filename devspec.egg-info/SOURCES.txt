@@ -1,0 +1,17 @@
+README.md
+pyproject.toml
+devspec/__init__.py
+devspec/main.py
+devspec.egg-info/PKG-INFO
+devspec.egg-info/SOURCES.txt
+devspec.egg-info/dependency_links.txt
+devspec.egg-info/entry_points.txt
+devspec.egg-info/requires.txt
+devspec.egg-info/top_level.txt
+devspec/commands/__init__.py
+devspec/commands/init.py
+devspec/commands/monitor.py
+devspec/core/__init__.py
+devspec/core/consistency.py
+devspec/core/markdown_parser.py
+devspec/core/spec_indexer.py

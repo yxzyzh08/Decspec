@@ -3,7 +3,10 @@
     "allow": [
       "Bash(uv run python:*)",
       "Bash(mkdir:*)",
-      "Bash(cp:*)"
+      "Bash(cp:*)",
+      "Bash(uv run devspec --help:*)",
+      "Bash(uv pip install:*)",
+      "Bash(uv run devspec:*)"
     ],
     "deny": [],
     "ask": []

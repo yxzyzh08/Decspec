@@ -1,0 +1,52 @@
+# Design Definition: Knowledge Classification
+# Type: Design (Why & What)
+# Purpose: 解释 Design 和 Substrate 的区分决策
+
+id: des_knowledge_classification
+type: design
+name: "Knowledge Classification"
+source_anchor: "PRD.md#des_knowledge_classification"
+
+intent: "明确 SpecGraph 中 Design 和 Substrate 两类知识的边界，指导 AI 在不同场景下加载正确的上下文。"
+
+rationale: |
+  为什么要区分 Design 和 Substrate？
+  1. **职责分离**: Design 解释"为什么"，Substrate 定义"怎么做"。
+  2. **加载效率**: AI 不需要在每个任务中加载所有知识，按需加载。
+  3. **维护清晰**: 修改设计决策不影响执行约束，反之亦然。
+  4. **团队协作**: 架构师关注 Design，开发者关注 Substrate。
+
+classification:
+  design:
+    definition: "设计决策 (Why & What)"
+    answers: "为什么这样设计？目标是什么？"
+    ai_load_when:
+      - "理解项目背景"
+      - "做架构决策"
+      - "设计新的 Feature"
+    location: ".specgraph/design/"
+    examples:
+      - "des_philosophy - 核心理念的设计决策"
+      - "des_architecture - 分层架构的目的"
+      - "des_domain_model - 领域划分的思路"
+
+  substrate:
+    definition: "执行约束 (How & Constraints)"
+    answers: "怎么执行？有什么约束？"
+    ai_load_when:
+      - "编写代码"
+      - "创建/验证 YAML 文件"
+      - "审查代码合规性"
+    location: ".specgraph/substrate/"
+    examples:
+      - "sub_tech_stack - 技术栈约束"
+      - "sub_meta_schema - YAML 结构验证规则"
+      - "sub_coding_style - 编码规范"
+
+principles:
+  - name: "Separation of Concerns"
+    desc: "Design 和 Substrate 各司其职，不混淆。"
+  - name: "Load on Demand"
+    desc: "AI 根据任务类型加载对应的知识，不过度加载。"
+  - name: "Single Source of Truth"
+    desc: "每类知识只在一处定义，避免重复和冲突。"

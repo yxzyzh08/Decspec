@@ -1,15 +1,15 @@
 # 📊 DevSpec Product Dashboard
 
-> **Generated At**: 2025-11-30 23:20:56
+> **Generated At**: 2025-12-01 08:39:40
 > **Phase**: 0 (Genesis Spec)
 
 ## 📈 Progress Overview
 
 | Dimension | Progress | Detail |
 | :--- | :--- | :--- |
-| **Spec Sync** | `[████████████████████]` 100% | 27/27 nodes |
-| **Feature Assignment** | `[█████░░░░░░░░░░░░░░░]` 25% | 3/12 features |
-| **Overall** | `[███████████░░░░░░░░░]` 55% | Weighted: Spec(40%) + Assignment(60%) |
+| **Spec Sync** | `[████████████████████]` 100% | 32/32 nodes |
+| **Feature Assignment** | `[██████░░░░░░░░░░░░░░]` 33% | 4/12 features |
+| **Overall** | `[███████████░░░░░░░░░]` 59% | Weighted: Spec(40%) + Assignment(60%) |
 
 ---
 
@@ -21,12 +21,14 @@
 | `des_bootstrap_strategy` | Design | 🟢 Synced |
 | `des_documentation` | Design | 🟢 Synced |
 | `des_domain_model` | Design | 🟢 Synced |
+| `des_knowledge_classification` | Design | 🟢 Synced |
 | `des_philosophy` | Design | 🟢 Synced |
 | `des_tech_strategy` | Design | 🟢 Synced |
 | `dom_cli` | Domain | 🟢 Synced |
 | `dom_core` | Domain | 🟢 Synced |
 | `dom_quality` | Domain | 🟢 Synced |
 | `prod_devspec` | Product | 🟢 Synced |
+| `sub_coding_style` | Substrate | 🟢 Synced |
 | `sub_meta_schema` | Substrate | 🟢 Synced |
 | `sub_tech_stack` | Substrate | 🟢 Synced |
 
@@ -36,7 +38,7 @@
 
 | Node ID | Domain | Spec Status | Assignment Status |
 | :--- | :--- | :--- | :--- |
-| `feat_cli_command_structure` | dom_cli | 🟢 Synced | 🔴 Unassigned |
+| `feat_cli_command_structure` | dom_cli | 🟢 Synced | 🟢 Assigned (3) |
 | `feat_cli_session_management` | dom_cli | 🟢 Synced | 🔴 Unassigned |
 | `feat_cli_visual_output` | dom_cli | 🟢 Synced | 🔴 Unassigned |
 | `feat_code_scanner` | dom_core | 🟢 Synced | 🟢 Assigned (1) |
@@ -55,6 +57,9 @@
 
 | Node ID | Parent Feature | Spec Status |
 | :--- | :--- | :--- |
+| `comp_cli_app` | feat_cli_command_structure | 🟢 Synced |
+| `comp_cli_init` | feat_cli_command_structure | 🟢 Synced |
+| `comp_cli_monitor` | feat_cli_command_structure | 🟢 Synced |
 | `comp_consistency_monitor` | feat_consistency_monitor | 🟢 Synced |
 | `comp_markdown_parser` | feat_consistency_monitor | 🟢 Synced |
 | `comp_spec_indexer` | feat_code_scanner, feat_consistency_monitor, feat_specgraph_engine | 🟢 Synced |

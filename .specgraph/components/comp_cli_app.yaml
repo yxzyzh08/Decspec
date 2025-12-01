@@ -1,0 +1,24 @@
+# Component Definition: CLI App
+# Part of feat_cli_command_structure
+# Validated against sub_meta_schema.yaml
+
+id: comp_cli_app
+type: module
+desc: "Typer 应用主入口，负责命令注册、全局配置和子命令分发。"
+source_anchor: "PRD.md#comp_cli_app"
+
+tech_stack:
+  - typer
+  - rich
+
+api_contract:
+  - name: "app"
+    type: "typer.Typer"
+    desc: "主 Typer 应用实例，作为 CLI 入口点。"
+  - name: "main()"
+    type: "function"
+    desc: "应用入口函数，由 pyproject.toml 的 [project.scripts] 调用。"
+
+file_path: "devspec/main.py"
+
+dependencies: []
