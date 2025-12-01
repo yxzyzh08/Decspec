@@ -1,0 +1,62 @@
+# Component Definition: Validate PRD Command
+# Part of feat_cli_command_structure
+# Validated against sub_meta_schema.yaml
+
+id: comp_cli_validate_prd
+type: module
+desc: "`devspec validate-prd` 命令实现，调用 PRDValidator 校验 PRD.md 格式并输出结果。"
+file_path: "devspec/commands/validate_prd.py"
+source_anchor: "PRD.md#comp_cli_validate_prd"
+
+tech_stack:
+  - typer
+  - rich
+  - pathlib
+
+dependencies:
+  - comp_prd_validator
+
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "def validate_prd(prd_path: Path = Path('PRD.md')) -> None"
+      desc: "执行 PRD 格式校验，输出结果到控制台"
+      params:
+        - name: "prd_path"
+          type: "Path"
+          desc: "PRD 文件路径，默认为当前目录的 PRD.md"
+      returns:
+        type: "None"
+        desc: "无返回值，结果直接输出到控制台，校验失败时 exit(1)"
+
+  # 伪代码逻辑
+  logic: |
+    1. 初始化 Rich console 对象
+    2. 打印开始信息 "[bold blue]DevSpec: Validating PRD format...[/bold blue]"
+    3. 检查 prd_path 是否存在:
+       3.1 如果不存在: 打印错误 "[red]✗ PRD.md not found[/red]" 并 raise typer.Exit(1)
+    4. 创建 PRDValidator 实例 (传入 prd_path)
+    5. 调用 validator.validate() 获取 ValidationResult
+    6. 输出结果:
+       6.1 如果有 errors:
+           - 打印 "[red]✗ Validation failed with {n} error(s):[/red]"
+           - 逐条打印 errors
+           - 如果有 warnings: 打印 warnings
+           - raise typer.Exit(1)
+       6.2 如果只有 warnings:
+           - 打印 "[yellow]⚠ Validation passed with {n} warning(s):[/yellow]"
+           - 逐条打印 warnings
+       6.3 如果全部通过:
+           - 打印 "[green]✓ PRD.md format is valid![/green]"
+
+  # 输出格式示例
+  output_example: |
+    DevSpec: Validating PRD format...
+    ✓ PRD.md format is valid!
+
+    # 或者有错误时:
+    DevSpec: Validating PRD format...
+    ✗ Validation failed with 2 error(s):
+      • Missing mandatory section: Product Vision
+      • Invalid anchor format at line 42: <!-- id:feat_scan -->

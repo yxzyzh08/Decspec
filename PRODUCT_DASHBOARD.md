@@ -1,15 +1,15 @@
 # 📊 DevSpec Product Dashboard
 
-> **Generated At**: 2025-12-01 08:39:40
+> **Generated At**: 2025-12-01 13:35:06
 > **Phase**: 0 (Genesis Spec)
 
 ## 📈 Progress Overview
 
 | Dimension | Progress | Detail |
 | :--- | :--- | :--- |
-| **Spec Sync** | `[████████████████████]` 100% | 32/32 nodes |
-| **Feature Assignment** | `[██████░░░░░░░░░░░░░░]` 33% | 4/12 features |
-| **Overall** | `[███████████░░░░░░░░░]` 59% | Weighted: Spec(40%) + Assignment(60%) |
+| **Spec Sync** | `[████████████████████]` 100% | 34/34 nodes |
+| **Feature Assignment** | `[████████░░░░░░░░░░░░]` 41% | 5/12 features |
+| **Overall** | `[████████████░░░░░░░░]` 64% | Weighted: Spec(40%) + Assignment(60%) |
 
 ---
 
@@ -38,7 +38,7 @@
 
 | Node ID | Domain | Spec Status | Assignment Status |
 | :--- | :--- | :--- | :--- |
-| `feat_cli_command_structure` | dom_cli | 🟢 Synced | 🟢 Assigned (3) |
+| `feat_cli_command_structure` | dom_cli | 🟢 Synced | 🟢 Assigned (4) |
 | `feat_cli_session_management` | dom_cli | 🟢 Synced | 🔴 Unassigned |
 | `feat_cli_visual_output` | dom_cli | 🟢 Synced | 🔴 Unassigned |
 | `feat_code_scanner` | dom_core | 🟢 Synced | 🟢 Assigned (1) |
@@ -48,7 +48,7 @@
 | `feat_quality_auto_fix` | dom_quality | 🟢 Synced | 🔴 Unassigned |
 | `feat_quality_compliance_audit` | dom_quality | 🟢 Synced | 🔴 Unassigned |
 | `feat_quality_drift_detection` | dom_quality | 🟢 Synced | 🔴 Unassigned |
-| `feat_quality_prd_validator` | dom_quality | 🟢 Synced | 🔴 Unassigned |
+| `feat_quality_prd_validator` | dom_quality | 🟢 Synced | 🟢 Assigned (1) |
 | `feat_specgraph_engine` | dom_core | 🟢 Synced | 🟢 Assigned (1) |
 
 ---
@@ -60,8 +60,10 @@
 | `comp_cli_app` | feat_cli_command_structure | 🟢 Synced |
 | `comp_cli_init` | feat_cli_command_structure | 🟢 Synced |
 | `comp_cli_monitor` | feat_cli_command_structure | 🟢 Synced |
+| `comp_cli_validate_prd` | feat_cli_command_structure | 🟢 Synced |
 | `comp_consistency_monitor` | feat_consistency_monitor | 🟢 Synced |
 | `comp_markdown_parser` | feat_consistency_monitor | 🟢 Synced |
+| `comp_prd_validator` | feat_quality_prd_validator | 🟢 Synced |
 | `comp_spec_indexer` | feat_code_scanner, feat_consistency_monitor, feat_specgraph_engine | 🟢 Synced |
 
 ---

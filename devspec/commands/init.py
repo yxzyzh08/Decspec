@@ -12,38 +12,84 @@ from rich.console import Console
 
 console = Console()
 
-# Claude Code slash command template
+# Claude Code slash command template (Markdown)
 CLAUDE_MONITOR_TEMPLATE = """---
 allowed-tools: Bash(uv run devspec monitor:*)
 description: Run DevSpec consistency monitor and generate dashboard
 ---
-
 # DevSpec Monitor
 
-执行 DevSpec 一致性检查，比对 PRD 与 SpecGraph，生成分层 Dashboard。
+Run the consistency check to verify alignment between PRD (Markdown) and SpecGraph (YAML).
 
+**Usage**
 ! uv run devspec monitor $ARGUMENTS
 """
 
-# Gemini CLI slash command template (same format)
-GEMINI_MONITOR_TEMPLATE = """---
-description: Run DevSpec consistency monitor and generate dashboard
+# Gemini CLI slash command template (TOML)
+GEMINI_MONITOR_TEMPLATE = """description = "Run DevSpec consistency monitor and generate dashboard"
+prompt = \"\"\"
+Run the DevSpec consistency monitor to check alignment between PRD and SpecGraph.
+Command: `uv run devspec monitor`
+\"\"\"
+"""
+
+# Claude Code write-prd slash command template (Markdown)
+CLAUDE_WRITE_PRD_TEMPLATE = """---
+allowed-tools: Read, Edit, Bash(uv run devspec validate-prd:*)
+description: Create or update PRD.md based on user requirements
 ---
+# DevSpec Write PRD
 
-# DevSpec Monitor
+You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
 
-执行 DevSpec 一致性检查，比对 PRD 与 SpecGraph，生成分层 Dashboard。
+## Instructions
 
-! uv run devspec monitor $ARGUMENTS
+1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+
+2. **Read current PRD**: Load `PRD.md` to understand the current state.
+
+3. **Apply changes**: Based on the user's requirement below, create or modify `PRD.md` following the rules strictly.
+
+4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+
+5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+
+## User Requirement
+
+$ARGUMENTS
+"""
+
+# Gemini CLI write-prd slash command template (TOML)
+GEMINI_WRITE_PRD_TEMPLATE = """description = "Create or update PRD.md based on user requirements"
+prompt = \"\"\"
+You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
+
+## Instructions
+
+1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+
+2. **Read current PRD**: Load `PRD.md` to understand the current state.
+
+3. **Apply changes**: Based on the user's requirement, create or modify `PRD.md` following the rules strictly.
+
+4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+
+5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+
+## User Requirement
+
+{{arguments}}
+\"\"\"
 """
 
 
-def init():
+def init() -> None:
     """
-    Initialize DevSpec for AI CLI integration.
+    Generate AI CLI slash command files.
 
-    Generates slash command files for Claude Code and Gemini CLI,
+    Creates slash command files for Claude Code and Gemini CLI,
     enabling direct invocation of DevSpec commands from AI assistants.
+    Skips files that already exist.
     """
     root_path = Path(".")
 
@@ -52,12 +98,22 @@ def init():
         {
             "path": root_path / ".claude" / "commands" / "devspec-monitor.md",
             "content": CLAUDE_MONITOR_TEMPLATE,
-            "cli_name": "Claude Code",
+            "cli_name": "Claude Code (monitor)",
         },
         {
-            "path": root_path / ".gemini" / "commands" / "devspec-monitor.md",
+            "path": root_path / ".gemini" / "commands" / "devspec-monitor.toml",
             "content": GEMINI_MONITOR_TEMPLATE,
-            "cli_name": "Gemini CLI",
+            "cli_name": "Gemini CLI (monitor)",
+        },
+        {
+            "path": root_path / ".claude" / "commands" / "devspec-write-prd.md",
+            "content": CLAUDE_WRITE_PRD_TEMPLATE,
+            "cli_name": "Claude Code (write-prd)",
+        },
+        {
+            "path": root_path / ".gemini" / "commands" / "devspec-write-prd.toml",
+            "content": GEMINI_WRITE_PRD_TEMPLATE,
+            "cli_name": "Gemini CLI (write-prd)",
         },
     ]
 
@@ -68,7 +124,12 @@ def init():
         content: str = cmd["content"]
         cli_name: str = cmd["cli_name"]
 
-        # Create directory if not exists
+        # Check if file already exists
+        if path.exists():
+            console.print(f"[yellow]⚠ {cli_name}: {path} already exists, skipping.[/yellow]")
+            continue
+
+        # Create parent directory if not exists
         path.parent.mkdir(parents=True, exist_ok=True)
 
         # Write command file
@@ -77,5 +138,5 @@ def init():
         console.print(f"[green]✓[/green] {cli_name}: {path}")
 
     console.print("\n[bold green]Done![/bold green] You can now use:")
-    console.print("  • Claude Code: [cyan]/devspec-monitor[/cyan]")
-    console.print("  • Gemini CLI:  [cyan]/devspec-monitor[/cyan]")
+    console.print("  • Claude Code: [cyan]/devspec-monitor[/cyan], [cyan]/devspec-write-prd[/cyan]")
+    console.print("  • Gemini CLI:  [cyan]/devspec-monitor[/cyan], [cyan]/devspec-write-prd[/cyan]")

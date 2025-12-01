@@ -1,0 +1,105 @@
+# Component Definition: PRD Validator
+# Part of feat_quality_prd_validator
+# Validated against sub_meta_schema.yaml
+
+id: comp_prd_validator
+type: module
+desc: "PRD 格式校验核心逻辑，检查章节结构、锚点格式、命名规范。基于 des_prompt_prd_writer.md 定义的规则。"
+file_path: "devspec/core/prd_validator.py"
+source_anchor: "PRD.md#comp_prd_validator"
+
+tech_stack:
+  - re
+  - pathlib
+  - rich
+
+dependencies: []
+
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "class ValidationResult"
+      desc: "校验结果数据类"
+      params:
+        - name: "is_valid"
+          type: "bool"
+          desc: "是否通过校验"
+        - name: "errors"
+          type: "list[str]"
+          desc: "错误信息列表"
+        - name: "warnings"
+          type: "list[str]"
+          desc: "警告信息列表"
+
+    - signature: "class PRDValidator"
+      desc: "PRD 格式校验器"
+      params:
+        - name: "prd_path"
+          type: "Path"
+          desc: "PRD.md 文件路径"
+
+    - signature: "def validate(self) -> ValidationResult"
+      desc: "执行完整的 PRD 格式校验"
+      params: []
+      returns:
+        type: "ValidationResult"
+        desc: "校验结果，包含错误和警告列表"
+
+  # 伪代码逻辑
+  logic: |
+    1. 初始化 PRDValidator:
+       1.1 保存 prd_path
+       1.2 初始化 errors 和 warnings 列表
+
+    2. validate() 方法:
+       2.1 读取 PRD.md 内容
+       2.2 调用 _check_mandatory_sections() 检查必需章节
+       2.3 调用 _check_anchor_format() 检查锚点格式
+       2.4 调用 _check_anchor_naming() 检查锚点命名规范
+       2.5 调用 _check_heading_hierarchy() 检查标题层级
+       2.6 返回 ValidationResult(is_valid=len(errors)==0, errors, warnings)
+
+    3. _check_mandatory_sections():
+       3.1 定义必需章节列表: ["Product Vision", "Design Principles", "Domain:"]
+       3.2 遍历检查每个章节是否存在
+       3.3 缺失的章节添加到 errors
+
+    4. _check_anchor_format():
+       4.1 使用正则 r'<!--\s*id:\s*(\w+)\s*-->' 匹配所有锚点
+       4.2 检查锚点是否在标题行末尾
+       4.3 格式不正确的添加到 errors
+
+    5. _check_anchor_naming():
+       5.1 定义有效前缀: ["prod_", "des_", "dom_", "feat_", "comp_", "sub_"]
+       5.2 检查每个锚点 ID 是否使用有效前缀
+       5.3 检查锚点是否使用 snake_case
+       5.4 不符合规范的添加到 warnings
+
+    6. _check_heading_hierarchy():
+       6.1 H1 只能出现一次（标题）
+       6.2 Domain 应该是 H2
+       6.3 Feature 应该是 H3
+       6.4 违反规则的添加到 warnings
+
+  # 关键常量
+  constants:
+    ANCHOR_PATTERN: 'r"<!--\s*id:\s*(\w+)\s*-->"'
+    VALID_PREFIXES:
+      - "prod_"
+      - "des_"
+      - "dom_"
+      - "feat_"
+      - "comp_"
+      - "sub_"
+    MANDATORY_SECTIONS:
+      - "Product Vision"
+      - "Design Principles"
+      - "Domain:"
+
+  # 错误处理
+  error_handling:
+    - condition: "PRD.md 文件不存在"
+      action: "返回 ValidationResult(is_valid=False, errors=['PRD.md not found'])"
+    - condition: "文件编码错误"
+      action: "返回 ValidationResult(is_valid=False, errors=['Failed to read PRD.md: encoding error'])"

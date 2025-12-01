@@ -11,6 +11,7 @@ from rich.console import Console
 
 from devspec.commands.init import init
 from devspec.commands.monitor import monitor
+from devspec.commands.validate_prd import validate_prd
 
 # Initialize Typer app
 app = typer.Typer(
@@ -25,6 +26,7 @@ console = Console()
 # Register commands
 app.command(name="init", help="Initialize DevSpec for AI CLI integration (Claude Code, Gemini CLI).")(init)
 app.command(name="monitor", help="Run PRD-Spec consistency check and generate dashboard.")(monitor)
+app.command(name="validate-prd", help="Validate PRD.md format against the canonical structure.")(validate_prd)
 
 
 @app.command(name="tree")

@@ -17,4 +17,5 @@ validation_rules:
   - "Verify bilingual rules: English headings, Chinese descriptions"
   - "Check section hierarchy: H1 for title, H2 for main sections, H3 for domains"
 
-realized_by: []
+realized_by:
+  - comp_prd_validator

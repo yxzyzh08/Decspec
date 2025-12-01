@@ -1,0 +1,5 @@
+description = "Run DevSpec consistency monitor and generate dashboard"
+prompt = """
+Run the DevSpec consistency monitor to check alignment between PRD and SpecGraph.
+Command: `uv run devspec monitor`
+"""

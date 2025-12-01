@@ -4,7 +4,7 @@
 
 id: comp_cli_init
 type: module
-desc: "`devspec init` 命令实现，为 Claude Code 和 Gemini CLI 生成 slash command 文件，使 AI CLI 可直接调用 DevSpec 命令。"
+desc: "`devspec init` 命令实现，为 Claude Code 和 Gemini CLI 生成 slash command 文件（包括 devspec-monitor 和 devspec-write-prd），使 AI CLI 可直接调用 DevSpec 命令。"
 file_path: "devspec/commands/init.py"
 
 tech_stack:
@@ -30,9 +30,15 @@ design:
   logic: |
     1. 初始化 Rich console 对象
     2. 定义模板常量:
-       - CLAUDE_MONITOR_TEMPLATE: Claude Code 的 slash command 模板 (Markdown)
-       - GEMINI_MONITOR_TEMPLATE: Gemini CLI 的 slash command 模板 (TOML)
-    3. 定义 commands 列表，每项包含 {path, content, cli_name}
+       - CLAUDE_MONITOR_TEMPLATE: Claude Code 的 devspec-monitor 模板 (Markdown)
+       - GEMINI_MONITOR_TEMPLATE: Gemini CLI 的 devspec-monitor 模板 (TOML)
+       - CLAUDE_WRITE_PRD_TEMPLATE: Claude Code 的 devspec-write-prd 模板 (Markdown)
+       - GEMINI_WRITE_PRD_TEMPLATE: Gemini CLI 的 devspec-write-prd 模板 (TOML)
+    3. 定义 commands 列表，每项包含 {path, content, cli_name}:
+       - .claude/commands/devspec-monitor.md
+       - .gemini/commands/devspec-monitor.toml
+       - .claude/commands/devspec-write-prd.md
+       - .gemini/commands/devspec-write-prd.toml
     4. 打印开始信息 "DevSpec Init: Generating AI CLI slash commands..."
     5. 遍历 commands 列表:
        5.1 检查文件是否存在 (Path.exists())
@@ -41,8 +47,8 @@ design:
        5.3 写入模板内容 (Path.write_text, encoding=utf-8)
        5.4 打印成功信息 "✓ {cli_name}: {path}"
     6. 打印使用说明:
-       - Claude Code: /devspec-monitor
-       - Gemini CLI: /devspec-monitor
+       - Claude Code: /devspec-monitor, /devspec-write-prd
+       - Gemini CLI: /devspec-monitor, /devspec-write-prd
 
   # 关键常量
   constants:
@@ -65,9 +71,64 @@ design:
       Command: `uv run devspec monitor`
       """
 
+    CLAUDE_WRITE_PRD_TEMPLATE: |
+      ---
+      allowed-tools: Read, Edit, Bash(uv run devspec validate-prd:*)
+      description: Create or update PRD.md based on user requirements
+      ---
+      # DevSpec Write PRD
+
+      You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
+
+      ## Instructions
+
+      1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+
+      2. **Read current PRD**: Load `PRD.md` to understand the current state.
+
+      3. **Apply changes**: Based on the user's requirement below, create or modify `PRD.md` following the rules strictly.
+
+      4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+
+      5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+
+      ## User Requirement
+
+      $ARGUMENTS
+
+    GEMINI_WRITE_PRD_TEMPLATE: |
+      description = "Create or update PRD.md based on user requirements"
+      prompt = """
+      You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
+
+      ## Instructions
+
+      1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+
+      2. **Read current PRD**: Load `PRD.md` to understand the current state.
+
+      3. **Apply changes**: Based on the user's requirement, create or modify `PRD.md` following the rules strictly.
+
+      4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+
+      5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+
+      ## User Requirement
+
+      {{arguments}}
+      """
+
   # 输出文件格式
   output_files:
     - path: ".claude/commands/devspec-monitor.md"
+      format: "Markdown with YAML frontmatter"
+      encoding: "utf-8"
     - path: ".gemini/commands/devspec-monitor.toml"
+      format: "TOML with description and prompt"
+      encoding: "utf-8"
+    - path: ".claude/commands/devspec-write-prd.md"
+      format: "Markdown with YAML frontmatter"
+      encoding: "utf-8"
+    - path: ".gemini/commands/devspec-write-prd.toml"
       format: "TOML with description and prompt"
       encoding: "utf-8"
