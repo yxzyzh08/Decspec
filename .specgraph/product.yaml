@@ -7,6 +7,8 @@ domains:
   - id: "dom_core"
     name: "Core Engine"
     description: "The brain of the system, handling the knowledge graph and context."
+    features:
+      - "feat_requirement_collector"
   - id: "dom_cli"
     name: "CLI Interface"
     description: "The user interaction layer using Typer."

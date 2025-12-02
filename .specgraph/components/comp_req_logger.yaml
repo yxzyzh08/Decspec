@@ -1,0 +1,37 @@
+# Component Definition: Requirement Logger
+# Part of feat_requirement_collector
+# Validated against sub_meta_schema.yaml
+
+id: comp_req_logger
+type: module
+desc: "负责将用户的原始想法或要求追加到原始需求文档，不做任何更改，仅记录时间戳。"
+file_path: "devspec/core/req_collector/logger.py"
+
+tech_stack:
+  - pathlib
+  - datetime
+
+dependencies: []
+
+# === 详细设计 (Design) ===
+design:
+  api:
+    - signature: "def log_requirement(content: str) -> str"
+      desc: "Append raw requirement to file with timestamp"
+      params:
+        - name: "content"
+          type: "str"
+          desc: "Raw user input"
+      returns:
+        type: "str"
+        desc: "Path to the log file"
+
+  logic: |
+    1. Define log file path: `origin_req/raw_requirements.md`
+    2. Ensure directory exists
+    3. Generate timestamp header: `## [YYYY-MM-DD HH:MM] Raw Input`
+    4. Append header and content to file
+    5. Return file path
+
+  constants:
+    LOG_FILE: "origin_req/raw_requirements.md"

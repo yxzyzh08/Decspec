@@ -26,19 +26,47 @@ design:
         type: "None"
         desc: "无返回值，通过 side effect 生成文件"
 
+# Component Definition: Init Command
+# Part of feat_cli_command_structure
+# Validated against sub_meta_schema.yaml
+
+id: comp_cli_init
+type: module
+desc: "`devspec init` 命令实现，为 Claude Code 和 Gemini CLI 生成 slash command 文件（包括 devspec-monitor 和 devspec-write-prd），使 AI CLI 可直接调用 DevSpec 命令。"
+file_path: "devspec/commands/init.py"
+
+tech_stack:
+  - typer
+  - rich
+  - pathlib
+
+dependencies:
+  - comp_cli_app
+
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    - signature: "def init() -> None"
+      desc: "生成 AI CLI 的 slash command 文件"
+      params: []
+      returns:
+        type: "None"
+        desc: "无返回值，通过 side effect 生成文件"
+
   # 伪代码逻辑
   logic: |
     1. 初始化 Rich console 对象
     2. 定义模板常量:
        - CLAUDE_MONITOR_TEMPLATE: Claude Code 的 devspec-monitor 模板 (Markdown)
        - GEMINI_MONITOR_TEMPLATE: Gemini CLI 的 devspec-monitor 模板 (TOML)
-       - CLAUDE_WRITE_PRD_TEMPLATE: Claude Code 的 devspec-write-prd 模板 (Markdown)
-       - GEMINI_WRITE_PRD_TEMPLATE: Gemini CLI 的 devspec-write-prd 模板 (TOML)
+       - CLAUDE_COLLECT_REQ_TEMPLATE: Claude Code 的 devspec-collect-req 模板 (Markdown)
+       - GEMINI_COLLECT_REQ_TEMPLATE: Gemini CLI 的 devspec-collect-req 模板 (TOML)
     3. 定义 commands 列表，每项包含 {path, content, cli_name}:
        - .claude/commands/devspec-monitor.md
        - .gemini/commands/devspec-monitor.toml
-       - .claude/commands/devspec-write-prd.md
-       - .gemini/commands/devspec-write-prd.toml
+       - .claude/commands/devspec-collect-req.md
+       - .gemini/commands/devspec-collect-req.toml
     4. 打印开始信息 "DevSpec Init: Generating AI CLI slash commands..."
     5. 遍历 commands 列表:
        5.1 检查文件是否存在 (Path.exists())
@@ -47,8 +75,8 @@ design:
        5.3 写入模板内容 (Path.write_text, encoding=utf-8)
        5.4 打印成功信息 "✓ {cli_name}: {path}"
     6. 打印使用说明:
-       - Claude Code: /devspec-monitor, /devspec-write-prd
-       - Gemini CLI: /devspec-monitor, /devspec-write-prd
+       - Claude Code: /devspec-monitor, /devspec-collect-req
+       - Gemini CLI: /devspec-monitor, /devspec-collect-req
 
   # 关键常量
   constants:
@@ -71,47 +99,69 @@ design:
       Command: `uv run devspec monitor`
       """
 
-    CLAUDE_WRITE_PRD_TEMPLATE: |
+    CLAUDE_COLLECT_REQ_TEMPLATE: |
       ---
       allowed-tools: Read, Edit, Bash(uv run devspec validate-prd:*)
-      description: Create or update PRD.md based on user requirements
+      description: Collect, analyze and decompose user requirements
       ---
-      # DevSpec Write PRD
+      # DevSpec Requirement Collector
 
-      You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
+      You are the **DevSpec Requirement Collector**. Your task is to collect, analyze, and decompose user requirements without modifying the code.
 
       ## Instructions
 
-      1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+      1. **Log Raw Input**: Append the user's raw requirement to `origin_req/raw_requirements.md` with a timestamp.
 
-      2. **Read current PRD**: Load `PRD.md` to understand the current state.
+      2. **Vision Check**: Check if the requirement aligns with the Product Vision in `PRD.md`.
+         - If NOT aligned: Stop and explain why. Do not update any documentation.
+         - If aligned: Proceed to decomposition.
 
-      3. **Apply changes**: Based on the user's requirement below, create or modify `PRD.md` following the rules strictly.
+      3. **Principle Check (CRITICAL)**: Before decomposition, you MUST load `des_architecture.yaml` and apply the following principles:
+         - **User Value Test**: Can the user independently accept this? (Yes -> Feature, No -> Component)
+         - **Granularity Rules**:
+           - **L0 (Domain)**: Strategic Scope (Cross-functional).
+           - **L1 (Feature)**: User Value Unit (Independent Acceptance).
+           - **L2 (Component)**: Detailed Design (1:1 File Mapping).
 
-      4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+      4. **Decomposition & Doc Update**:
+         - **Cross-Domain**: Generate Domain-level subtasks. Update `product.yaml`.
+         - **Domain-Level**: Generate Feature-level subtasks. Update `product.yaml` and create/update `feat_*.yaml`.
+         - **Feature-Level**: Generate Component-level subtasks. Update `feat_*.yaml` and create/update `comp_*.yaml`.
+         - **Component-Level**: Update `comp_*.yaml`.
 
-      5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+      5. **Report**: Generate a summary report in `reports/` folder with timestamp.
 
       ## User Requirement
 
       $ARGUMENTS
 
-    GEMINI_WRITE_PRD_TEMPLATE: |
-      description = "Create or update PRD.md based on user requirements"
+    GEMINI_COLLECT_REQ_TEMPLATE: |
+      description = "Collect, analyze and decompose user requirements"
       prompt = """
-      You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
+      You are the **DevSpec Requirement Collector**. Your task is to collect, analyze, and decompose user requirements without modifying the code.
 
       ## Instructions
 
-      1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+      1. **Log Raw Input**: Append the user's raw requirement to `origin_req/raw_requirements.md` with a timestamp.
 
-      2. **Read current PRD**: Load `PRD.md` to understand the current state.
+      2. **Vision Check**: Check if the requirement aligns with the Product Vision in `PRD.md`.
+         - If NOT aligned: Stop and explain why. Do not update any documentation.
+         - If aligned: Proceed to decomposition.
 
-      3. **Apply changes**: Based on the user's requirement, create or modify `PRD.md` following the rules strictly.
+      3. **Principle Check (CRITICAL)**: Before decomposition, you MUST load `des_architecture.yaml` and apply the following principles:
+         - **User Value Test**: Can the user independently accept this? (Yes -> Feature, No -> Component)
+         - **Granularity Rules**:
+           - **L0 (Domain)**: Strategic Scope (Cross-functional).
+           - **L1 (Feature)**: User Value Unit (Independent Acceptance).
+           - **L2 (Component)**: Detailed Design (1:1 File Mapping).
 
-      4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+      4. **Decomposition & Doc Update**:
+         - **Cross-Domain**: Generate Domain-level subtasks. Update `product.yaml`.
+         - **Domain-Level**: Generate Feature-level subtasks. Update `product.yaml` and create/update `feat_*.yaml`.
+         - **Feature-Level**: Generate Component-level subtasks. Update `feat_*.yaml` and create/update `comp_*.yaml`.
+         - **Component-Level**: Update `comp_*.yaml`.
 
-      5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+      5. **Report**: Generate a summary report in `reports/` folder with timestamp.
 
       ## User Requirement
 
@@ -126,9 +176,9 @@ design:
     - path: ".gemini/commands/devspec-monitor.toml"
       format: "TOML with description and prompt"
       encoding: "utf-8"
-    - path: ".claude/commands/devspec-write-prd.md"
+    - path: ".claude/commands/devspec-collect-req.md"
       format: "Markdown with YAML frontmatter"
       encoding: "utf-8"
-    - path: ".gemini/commands/devspec-write-prd.toml"
+    - path: ".gemini/commands/devspec-collect-req.toml"
       format: "TOML with description and prompt"
       encoding: "utf-8"

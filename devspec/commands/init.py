@@ -33,48 +33,70 @@ Command: `uv run devspec monitor`
 \"\"\"
 """
 
-# Claude Code write-prd slash command template (Markdown)
-CLAUDE_WRITE_PRD_TEMPLATE = """---
+# Claude Code collect-req slash command template (Markdown)
+CLAUDE_COLLECT_REQ_TEMPLATE = """---
 allowed-tools: Read, Edit, Bash(uv run devspec validate-prd:*)
-description: Create or update PRD.md based on user requirements
+description: Collect, analyze and decompose user requirements
 ---
-# DevSpec Write PRD
+# DevSpec Requirement Collector
 
-You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
+You are the **DevSpec Requirement Collector**. Your task is to collect, analyze, and decompose user requirements without modifying the code.
 
 ## Instructions
 
-1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+1. **Log Raw Input**: Append the user's raw requirement to `origin_req/raw_requirements.md` with a timestamp.
 
-2. **Read current PRD**: Load `PRD.md` to understand the current state.
+2. **Vision Check**: Check if the requirement aligns with the Product Vision in `PRD.md`.
+   - If NOT aligned: Stop and explain why. Do not update any documentation.
+   - If aligned: Proceed to decomposition.
 
-3. **Apply changes**: Based on the user's requirement below, create or modify `PRD.md` following the rules strictly.
+3. **Principle Check (CRITICAL)**: Before decomposition, you MUST load `des_architecture.yaml` and apply the following principles:
+   - **User Value Test**: Can the user independently accept this? (Yes -> Feature, No -> Component)
+   - **Granularity Rules**:
+     - **L0 (Domain)**: Strategic Scope (Cross-functional).
+     - **L1 (Feature)**: User Value Unit (Independent Acceptance).
+     - **L2 (Component)**: Detailed Design (1:1 File Mapping).
 
-4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+4. **Decomposition & Doc Update**:
+   - **Cross-Domain**: Generate Domain-level subtasks. Update `product.yaml`.
+   - **Domain-Level**: Generate Feature-level subtasks. Update `product.yaml` and create/update `feat_*.yaml`.
+   - **Feature-Level**: Generate Component-level subtasks. Update `feat_*.yaml` and create/update `comp_*.yaml`.
+   - **Component-Level**: Update `comp_*.yaml`.
 
-5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+5. **Report**: Generate a summary report in `reports/` folder with timestamp.
 
 ## User Requirement
 
 $ARGUMENTS
 """
 
-# Gemini CLI write-prd slash command template (TOML)
-GEMINI_WRITE_PRD_TEMPLATE = """description = "Create or update PRD.md based on user requirements"
+# Gemini CLI collect-req slash command template (TOML)
+GEMINI_COLLECT_REQ_TEMPLATE = """description = "Collect, analyze and decompose user requirements"
 prompt = \"\"\"
-You are the **DevSpec PRD Architect**. Your task is to create or update `PRD.md` based on user requirements.
+You are the **DevSpec Requirement Collector**. Your task is to collect, analyze, and decompose user requirements without modifying the code.
 
 ## Instructions
 
-1. **Read the PRD writing rules**: Load `.specgraph/design/des_prompt_prd_writer.md` to understand the canonical structure and rules.
+1. **Log Raw Input**: Append the user's raw requirement to `origin_req/raw_requirements.md` with a timestamp.
 
-2. **Read current PRD**: Load `PRD.md` to understand the current state.
+2. **Vision Check**: Check if the requirement aligns with the Product Vision in `PRD.md`.
+   - If NOT aligned: Stop and explain why. Do not update any documentation.
+   - If aligned: Proceed to decomposition.
 
-3. **Apply changes**: Based on the user's requirement, create or modify `PRD.md` following the rules strictly.
+3. **Principle Check (CRITICAL)**: Before decomposition, you MUST load `des_architecture.yaml` and apply the following principles:
+   - **User Value Test**: Can the user independently accept this? (Yes -> Feature, No -> Component)
+   - **Granularity Rules**:
+     - **L0 (Domain)**: Strategic Scope (Cross-functional).
+     - **L1 (Feature)**: User Value Unit (Independent Acceptance).
+     - **L2 (Component)**: Detailed Design (1:1 File Mapping).
 
-4. **Validate**: After modification, run `uv run devspec validate-prd` to verify the format.
+4. **Decomposition & Doc Update**:
+   - **Cross-Domain**: Generate Domain-level subtasks. Update `product.yaml`.
+   - **Domain-Level**: Generate Feature-level subtasks. Update `product.yaml` and create/update `feat_*.yaml`.
+   - **Feature-Level**: Generate Component-level subtasks. Update `feat_*.yaml` and create/update `comp_*.yaml`.
+   - **Component-Level**: Update `comp_*.yaml`.
 
-5. **Report**: If validation passes, confirm success. If validation fails, fix the issues and re-validate.
+5. **Report**: Generate a summary report in `reports/` folder with timestamp.
 
 ## User Requirement
 
@@ -106,14 +128,14 @@ def init() -> None:
             "cli_name": "Gemini CLI (monitor)",
         },
         {
-            "path": root_path / ".claude" / "commands" / "devspec-write-prd.md",
-            "content": CLAUDE_WRITE_PRD_TEMPLATE,
-            "cli_name": "Claude Code (write-prd)",
+            "path": root_path / ".claude" / "commands" / "devspec-collect-req.md",
+            "content": CLAUDE_COLLECT_REQ_TEMPLATE,
+            "cli_name": "Claude Code (collect-req)",
         },
         {
-            "path": root_path / ".gemini" / "commands" / "devspec-write-prd.toml",
-            "content": GEMINI_WRITE_PRD_TEMPLATE,
-            "cli_name": "Gemini CLI (write-prd)",
+            "path": root_path / ".gemini" / "commands" / "devspec-collect-req.toml",
+            "content": GEMINI_COLLECT_REQ_TEMPLATE,
+            "cli_name": "Gemini CLI (collect-req)",
         },
     ]
 
@@ -138,5 +160,5 @@ def init() -> None:
         console.print(f"[green]✓[/green] {cli_name}: {path}")
 
     console.print("\n[bold green]Done![/bold green] You can now use:")
-    console.print("  • Claude Code: [cyan]/devspec-monitor[/cyan], [cyan]/devspec-write-prd[/cyan]")
-    console.print("  • Gemini CLI:  [cyan]/devspec-monitor[/cyan], [cyan]/devspec-write-prd[/cyan]")
+    console.print("  • Claude Code: [cyan]/devspec-monitor[/cyan], [cyan]/devspec-collect-req[/cyan]")
+    console.print("  • Gemini CLI:  [cyan]/devspec-monitor[/cyan], [cyan]/devspec-collect-req[/cyan]")

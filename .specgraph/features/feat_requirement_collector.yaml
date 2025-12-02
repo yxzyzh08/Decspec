@@ -1,0 +1,19 @@
+# Feature Definition: Requirement Collector
+# Part of Core Engine (L0: dom_core)
+# Validated against sub_meta_schema.yaml
+
+id: feat_requirement_collector
+domain: dom_core
+source_anchor: "PRD.md#feat_requirement_collector"
+intent: "Collect, analyze, and decompose user requirements without modifying code, ensuring alignment with Product Vision."
+
+user_stories:
+  - "As a user, I want my raw ideas to be logged immediately without modification so that I don't lose them."
+  - "As a user, I want the system to check if my requirement aligns with the Product Vision before proceeding."
+  - "As a user, I want complex requirements to be decomposed into Domain/Feature/Component tasks automatically."
+  - "As a user, I want a detailed report of what documentation was updated, without any code being changed."
+
+realized_by:
+  - comp_req_logger
+  - comp_req_analyzer
+  - comp_req_reporter

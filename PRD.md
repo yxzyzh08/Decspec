@@ -190,9 +190,21 @@ SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质
 
 为 AI 组装最小充分上下文。
 
-### 3.6 Feature: PRD Writer <!-- id: feat_core_prd_writer -->
+### 3.6 Feature: Requirement Collector <!-- id: feat_requirement_collector -->
 
-根据用户需求生成或更新 PRD.md，严格遵循 `des_prompt_prd_writer.md` 定义的规则。这是系统自举的核心能力。
+负责收集、分析和分解用户需求，但不直接修改代码。
+
+**Core Functions (核心功能)**:
+1.  **Raw Logging (原始记录)**: 将用户的原始想法或要求追加到原始需求文档，不做任何更改，仅记录时间戳。
+2.  **Analysis & Decomposition (分析与分解)**:
+    *   **Vision Check**: 检查需求是否符合当前 Product Vision。如果不符，明确指出并中止，不更新 PRD。
+    *   **Decomposition**: 如果符合 Vision，按粒度分解任务：
+        *   **Cross-Domain**: 生成 Domain 级别的子任务清单。
+        *   **Domain-Level**: 生成 Feature 级别的子任务清单。
+        *   **Feature-Level**: 生成 Component 级别的子任务清单。
+        *   **Component-Level**: 仅更新 Component。
+3.  **Doc-Only Update (仅文档更新)**: 收集阶段只更新文档 (PRD/SpecGraph)，绝不更新代码。
+4.  **Reporting (报告)**: 输出详细的更新报告，保存到 `reports/` 目录，文件名包含日期和时间。
 
 ---
 
