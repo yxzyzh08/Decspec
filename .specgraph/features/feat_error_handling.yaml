@@ -1,0 +1,30 @@
+# Feature Definition: Error Handling
+# Part of Infrastructure (L0: dom_infra)
+
+id: feat_error_handling
+domain: dom_infra
+source_anchor: "PRD.md#feat_error_handling"
+intent: "Provide unified error handling with classification, context enrichment, and recovery strategies."
+
+user_stories:
+  - "As a developer, I want errors to be classified as recoverable or fatal automatically."
+  - "As an operator, I want error logs to include full context (stack trace, parameters, timestamp)."
+  - "As a user, I want to see friendly error messages instead of technical stack traces."
+  - "As the system, I want to apply recovery strategies (retry, fallback) for recoverable errors."
+
+workflow:
+  - step: 1
+    action: "Catch exception in handle_error(error, context)"
+    output: "Captured error with context"
+  - step: 2
+    action: "Classify error (recoverable vs fatal)"
+    output: "Error classification"
+  - step: 3
+    action: "Enrich with context (stack, params, timestamp)"
+    output: "Enriched error record"
+  - step: 4
+    action: "Apply recovery strategy or propagate"
+    output: "Recovery action or user-friendly error message"
+
+realized_by:
+  - comp_error_handler

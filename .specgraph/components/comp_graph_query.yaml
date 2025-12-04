@@ -1,0 +1,243 @@
+# Component Definition: Graph Query
+# Implements: feat_specgraph_database
+
+id: comp_graph_query
+type: module
+desc: "Graph query interface supporting node queries, relationship traversal, and path search."
+file_path: "devspec/core/graph_query.py"
+
+tech_stack:
+  - "SQLModel"
+
+dependencies:
+  - comp_graph_database  # For database access
+
+design:
+  api:
+    - signature: "class GraphQuery"
+      desc: "Query interface for SpecGraph database"
+      methods:
+        - signature: "__init__(self, db: GraphDatabase) -> None"
+          desc: "Initialize query engine with database."
+          params:
+            - name: "db"
+              type: "GraphDatabase"
+              desc: "Database instance"
+
+        - signature: "get_nodes_by_type(self, node_type: str) -> List[NodeModel]"
+          desc: "Get all nodes of a specific type."
+          params:
+            - name: "node_type"
+              type: "str"
+              desc: "Node type (product, domain, feature, component, design, substrate)"
+          returns:
+            type: "List[NodeModel]"
+            desc: "List of matching nodes"
+
+        - signature: "get_node_with_relations(self, node_id: str, depth: int = 1) -> NodeGraph"
+          desc: "Get a node with its related nodes up to specified depth."
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "Node ID to start from"
+            - name: "depth"
+              type: "int"
+              desc: "How many levels of relationships to include (default 1)"
+          returns:
+            type: "NodeGraph"
+            desc: "Node with its related nodes and edges"
+
+        - signature: "get_children(self, node_id: str, relation: str = None) -> List[NodeModel]"
+          desc: "Get all child nodes (outgoing edges) of a node."
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "Parent node ID"
+            - name: "relation"
+              type: "str | None"
+              desc: "Filter by relation type (optional)"
+          returns:
+            type: "List[NodeModel]"
+            desc: "List of child nodes"
+
+        - signature: "get_parents(self, node_id: str, relation: str = None) -> List[NodeModel]"
+          desc: "Get all parent nodes (incoming edges) of a node."
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "Child node ID"
+            - name: "relation"
+              type: "str | None"
+              desc: "Filter by relation type (optional)"
+          returns:
+            type: "List[NodeModel]"
+            desc: "List of parent nodes"
+
+        - signature: "get_feature_context(self, feature_id: str) -> FeatureContext"
+          desc: "Get full context for a feature (domain, components, dependencies)."
+          params:
+            - name: "feature_id"
+              type: "str"
+              desc: "Feature node ID"
+          returns:
+            type: "FeatureContext"
+            desc: "Complete feature context for AI consumption"
+
+        - signature: "get_component_context(self, component_id: str) -> ComponentContext"
+          desc: "Get full context for a component (feature, dependencies, file path)."
+          params:
+            - name: "component_id"
+              type: "str"
+              desc: "Component node ID"
+          returns:
+            type: "ComponentContext"
+            desc: "Complete component context for AI consumption"
+
+        - signature: "get_domain_apis(self, domain_id: str) -> List[DomainAPIModel]"
+          desc: "Get all APIs exported by a domain."
+          params:
+            - name: "domain_id"
+              type: "str"
+              desc: "Domain node ID"
+          returns:
+            type: "List[DomainAPIModel]"
+            desc: "List of exported APIs"
+
+        - signature: "find_path(self, from_id: str, to_id: str) -> List[EdgeModel] | None"
+          desc: "Find shortest path between two nodes."
+          params:
+            - name: "from_id"
+              type: "str"
+              desc: "Start node ID"
+            - name: "to_id"
+              type: "str"
+              desc: "End node ID"
+          returns:
+            type: "List[EdgeModel] | None"
+            desc: "List of edges forming the path, or None if no path exists"
+
+        - signature: "search_nodes(self, query: str, node_types: List[str] = None) -> List[NodeModel]"
+          desc: "Full-text search across node names and descriptions."
+          params:
+            - name: "query"
+              type: "str"
+              desc: "Search query string"
+            - name: "node_types"
+              type: "List[str] | None"
+              desc: "Filter by node types (optional)"
+          returns:
+            type: "List[NodeModel]"
+            desc: "List of matching nodes"
+
+    - signature: "class NodeGraph"
+      desc: "A node with its related nodes and edges"
+      fields:
+        - name: "root"
+          type: "NodeModel"
+          desc: "The central node"
+        - name: "nodes"
+          type: "Dict[str, NodeModel]"
+          desc: "All related nodes by ID"
+        - name: "edges"
+          type: "List[EdgeModel]"
+          desc: "All edges in the subgraph"
+
+    - signature: "class FeatureContext"
+      desc: "Complete context for a feature"
+      fields:
+        - name: "feature"
+          type: "NodeModel"
+          desc: "The feature node"
+        - name: "domain"
+          type: "NodeModel"
+          desc: "Parent domain"
+        - name: "components"
+          type: "List[NodeModel]"
+          desc: "Implementing components"
+        - name: "dependencies"
+          type: "List[NodeModel]"
+          desc: "Dependent features"
+        - name: "consumed_apis"
+          type: "List[DomainAPIModel]"
+          desc: "APIs consumed from other domains"
+
+    - signature: "class ComponentContext"
+      desc: "Complete context for a component"
+      fields:
+        - name: "component"
+          type: "NodeModel"
+          desc: "The component node"
+        - name: "feature"
+          type: "NodeModel"
+          desc: "Parent feature"
+        - name: "domain"
+          type: "NodeModel"
+          desc: "Parent domain"
+        - name: "dependencies"
+          type: "List[NodeModel]"
+          desc: "Dependent components"
+        - name: "design"
+          type: "Dict"
+          desc: "Component design (api, logic, constants)"
+
+  logic: |
+    1. get_nodes_by_type(node_type):
+       1.1 SELECT * FROM nodes WHERE type = node_type
+       1.2 返回 List[NodeModel]
+
+    2. get_node_with_relations(node_id, depth):
+       2.1 获取根节点
+       2.2 BFS 遍历到指定深度:
+           2.2.1 获取所有出边 (source_id = current_id)
+           2.2.2 获取所有入边 (target_id = current_id)
+           2.2.3 将相关节点加入队列
+       2.3 构建 NodeGraph 返回
+
+    3. get_children(node_id, relation):
+       3.1 SELECT target_id FROM edges WHERE source_id = node_id
+       3.2 如果 relation 不为空，添加 AND relation = relation
+       3.3 查询对应的节点并返回
+
+    4. get_parents(node_id, relation):
+       4.1 SELECT source_id FROM edges WHERE target_id = node_id
+       4.2 如果 relation 不为空，添加 AND relation = relation
+       4.3 查询对应的节点并返回
+
+    5. get_feature_context(feature_id):
+       5.1 获取 feature 节点
+       5.2 获取父 domain: get_parents(feature_id, "owns")
+       5.3 获取实现的 components: get_children(feature_id, "realized_by")
+       5.4 获取依赖的 features: get_children(feature_id, "depends_on")
+       5.5 获取消费的 APIs: 查询 consumes 边
+       5.6 构建 FeatureContext 返回
+
+    6. get_component_context(component_id):
+       6.1 获取 component 节点
+       6.2 获取父 feature: 查询 realized_by 边的源节点
+       6.3 获取父 domain: feature 的父 domain
+       6.4 获取依赖的 components: get_children(component_id, "depends_on")
+       6.5 解析 raw_yaml 提取 design 字段
+       6.6 构建 ComponentContext 返回
+
+    7. get_domain_apis(domain_id):
+       7.1 SELECT * FROM domain_apis WHERE domain_id = domain_id
+       7.2 返回 List[DomainAPIModel]
+
+    8. find_path(from_id, to_id):
+       8.1 BFS 从 from_id 开始
+       8.2 记录访问路径
+       8.3 到达 to_id 时重建路径
+       8.4 返回边列表或 None
+
+    9. search_nodes(query, node_types):
+       9.1 SELECT * FROM nodes WHERE (name LIKE %query% OR description LIKE %query%)
+       9.2 如果 node_types 不为空，添加 AND type IN (node_types)
+       9.3 返回匹配节点
+
+  error_handling:
+    - condition: "Node not found"
+      action: "Return None or empty list (not raise exception)"
+    - condition: "Invalid node type"
+      action: "Log warning, return empty list"
+    - condition: "Circular reference in path finding"
+      action: "Track visited nodes, skip already visited"

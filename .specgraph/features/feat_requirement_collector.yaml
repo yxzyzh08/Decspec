@@ -1,19 +1,131 @@
 # Feature Definition: Requirement Collector
 # Part of Core Engine (L0: dom_core)
-# Validated against sub_meta_schema.yaml
+# 核心理念：理解优先于分解，对话优先于流程
 
 id: feat_requirement_collector
 domain: dom_core
 source_anchor: "PRD.md#feat_requirement_collector"
-intent: "Collect, analyze, and decompose user requirements without modifying code, ensuring alignment with Product Vision."
+intent: "通过对话式流程收集、理解和分解用户需求，确保 AI 正确理解需求后再进行分解。"
 
 user_stories:
-  - "As a user, I want my raw ideas to be logged immediately without modification so that I don't lose them."
-  - "As a user, I want the system to check if my requirement aligns with the Product Vision before proceeding."
-  - "As a user, I want complex requirements to be decomposed into Domain/Feature/Component tasks automatically."
-  - "As a user, I want a detailed report of what documentation was updated, without any code being changed."
+  - "As a user, I want the AI to first understand my requirement before jumping to decomposition."
+  - "As a user, I want to confirm that the AI understood my requirement correctly before it proceeds."
+  - "As a user, I want the system to tell me if my requirement needs Spec changes or just code changes."
+  - "As a user, I want to negotiate Vision boundaries if my requirement doesn't fit current Vision."
+  - "As a user, I want a clear execution plan with dependency order before any changes are made."
+
+# 设计原则
+design_principles:
+  - name: "Understanding First"
+    desc: "先确保理解需求本身，再进行分类和分解"
+  - name: "Dialogue Over Pipeline"
+    desc: "需求分析是对话过程，不是单向流水线"
+  - name: "Soft Vision Boundary"
+    desc: "Vision 是可协商的边界，不是硬性拒绝条件"
+  - name: "Spec-Change Awareness"
+    desc: "区分'需要更新 Spec'和'只需修改代码'的需求"
+
+# 对话流程定义
+workflow:
+  - phase: 1
+    name: "Understanding"
+    desc: "理解需求"
+    steps:
+      - "1.1 接收用户原始需求"
+      - "1.2 加载 Product Vision (理解产品是什么)"
+      - "1.3 用自己的话复述需求"
+      - "1.4 向用户确认理解是否正确"
+    confirmation_required: true
+    context_loaded:
+      - "product.yaml (vision, description)"
+
+  - phase: 2
+    name: "Locating"
+    desc: "定位影响"
+    steps:
+      - "2.1 加载 Domain 概要"
+      - "2.2 判断需求涉及哪些 Domain"
+      - "2.3 如果涉及多 Domain，说明跨域影响"
+      - "2.4 加载相关 Domain 的现有 Feature 列表"
+      - "2.5 判断是新增 Feature 还是修改现有 Feature"
+    confirmation_required: false
+    context_loaded:
+      - "product.yaml (domains)"
+      - "feat_*.yaml (按需加载相关 Domain 的 Features)"
+
+  - phase: 3
+    name: "Evaluating"
+    desc: "评估变更"
+    pre_step:
+      name: "Exhaustiveness Check"
+      desc: "穷尽性检查 - 在决定新增节点前，必须证明现有节点无法满足"
+      logic: |
+        1. Feature 层检查:
+           - 列出相关 Domain 下所有现有 Feature
+           - 逐一评估：此需求能否通过修改该 Feature 实现？
+           - 记录每个 Feature 的排除理由
+           - 只有全部无法满足时，才进入"新增 Feature"分支
+        2. Component 层检查 (在修改现有 Feature 时):
+           - 列出该 Feature 下所有现有 Component
+           - 逐一评估：此需求能否通过修改该 Component 实现？
+           - 记录每个 Component 的排除理由
+           - 只有全部无法满足时，才新增 Component
+        3. 快速通过条件:
+           - 如果需求明显涉及全新领域，可跳过详细检查
+           - 但必须记录跳过原因
+      output_format:
+        exhaustiveness_check:
+          level: "feature | component"
+          evaluated:
+            - id: "node_id"
+              can_satisfy: false
+              reason: "排除理由"
+          skip_reason: "可选，快速通过时的理由"
+          conclusion: "评估结论"
+    branches:
+      - condition: "新增 Feature"
+        prerequisite: "Exhaustiveness Check 已证明现有 Feature 无法满足"
+        steps:
+          - "检查是否符合 Vision (边界检查)"
+          - "如不符合，询问用户是否要扩展 Vision"
+          - "设计 Feature 的 intent 和 user_stories"
+      - condition: "修改现有 Feature"
+        steps:
+          - "加载 Feature 详情和其 Components"
+          - "执行 Component 层 Exhaustiveness Check"
+          - "判断是修改 Component 还是新增 Component (需证明)"
+      - condition: "只是代码修改"
+        steps:
+          - "直接定位到具体文件"
+          - "跳过 Spec 更新流程"
+    confirmation_required: false
+    context_loaded:
+      - "comp_*.yaml (按需加载相关 Components)"
+
+  - phase: 4
+    name: "Planning"
+    desc: "生成计划"
+    steps:
+      - "4.1 生成 Spec 变更清单 (如果有)"
+      - "4.2 生成代码变更清单"
+      - "4.3 分析依赖关系，确定执行顺序"
+      - "4.4 向用户展示计划，请求确认"
+    confirmation_required: true
+    output:
+      - "Spec 变更清单"
+      - "代码变更清单"
+      - "执行顺序"
+      - "分析报告"
+
+# 关键确认点
+key_confirmations:
+  - after_phase: 1
+    purpose: "确认 AI 对需求的理解是否正确"
+  - after_phase: 4
+    purpose: "确认执行计划是否符合用户预期"
 
 realized_by:
-  - comp_req_logger
-  - comp_req_analyzer
-  - comp_req_reporter
+  - comp_req_understanding   # Phase 1: 理解需求
+  - comp_req_locator         # Phase 2: 定位影响
+  - comp_req_evaluator       # Phase 3: 评估变更
+  - comp_req_planner         # Phase 4: 生成计划

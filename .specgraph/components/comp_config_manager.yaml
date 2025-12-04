@@ -1,0 +1,150 @@
+# Component Definition: Config Manager
+# Implements: feat_config_management
+
+id: comp_config_manager
+type: module
+desc: "Configuration loading, merging, and access with layered overrides."
+file_path: "devspec/infra/config.py"
+
+tech_stack:
+  - "PyYAML"
+  - "os (environ)"
+
+dependencies: []
+
+design:
+  api:
+    - signature: "def get_config(key: str, default: Any = None) -> Any"
+      desc: "Get a configuration value by key with optional default."
+      params:
+        - name: "key"
+          type: "str"
+          desc: "Config key, supports dot notation (e.g., 'database.path')"
+        - name: "default"
+          type: "Any"
+          desc: "Default value if key not found"
+      returns:
+        type: "Any"
+        desc: "Config value or default"
+
+    - signature: "def load_config(path: Path) -> Dict"
+      desc: "Load configuration from a YAML file."
+      params:
+        - name: "path"
+          type: "Path"
+          desc: "Path to config file"
+      returns:
+        type: "Dict"
+        desc: "Loaded configuration dictionary"
+
+    - signature: "class ConfigManager"
+      desc: "Configuration management class"
+      methods:
+        - signature: "get_instance() -> ConfigManager"
+          desc: "Get singleton instance."
+          returns:
+            type: "ConfigManager"
+            desc: "Singleton instance"
+
+        - signature: "load(path: Path) -> None"
+          desc: "Load and merge config from file."
+          params:
+            - name: "path"
+              type: "Path"
+              desc: "Config file path"
+
+        - signature: "get(key: str, default: Any = None) -> Any"
+          desc: "Get config value."
+          params:
+            - name: "key"
+              type: "str"
+              desc: "Config key (supports dot notation)"
+            - name: "default"
+              type: "Any"
+              desc: "Default value"
+          returns:
+            type: "Any"
+            desc: "Config value"
+
+        - signature: "set(key: str, value: Any) -> None"
+          desc: "Set config value (runtime only, not persisted)."
+          params:
+            - name: "key"
+              type: "str"
+              desc: "Config key"
+            - name: "value"
+              type: "Any"
+              desc: "Value to set"
+
+        - signature: "reload() -> None"
+          desc: "Reload all config files."
+
+  logic: |
+    1. get_config(key, default):
+       1.1 获取 ConfigManager 单例
+       1.2 调用 manager.get(key, default)
+       1.3 返回值
+
+    2. load_config(path):
+       2.1 读取文件内容
+       2.2 yaml.safe_load(content)
+       2.3 返回 dict
+
+    3. ConfigManager.get_instance():
+       3.1 使用模块级 _instance
+       3.2 如果为 None，创建新实例并加载默认配置
+       3.3 返回 _instance
+
+    4. ConfigManager.__init__():
+       4.1 初始化 _config = {} (合并后的配置)
+       4.2 初始化 _defaults = DEFAULT_CONFIG
+       4.3 初始化 _loaded_files = []
+       4.4 尝试加载 .specgraph/config.yaml (如果存在)
+       4.5 应用环境变量覆盖
+
+    5. ConfigManager.load(path):
+       5.1 读取 YAML 文件
+       5.2 深度合并到 _config (后加载覆盖先加载)
+       5.3 记录到 _loaded_files
+       5.4 重新应用环境变量覆盖
+
+    6. ConfigManager.get(key, default):
+       6.1 按 '.' 分割 key
+       6.2 逐层访问 _config
+       6.3 如果任意层不存在，返回 default
+       6.4 返回找到的值
+
+    7. ConfigManager.set(key, value):
+       7.1 按 '.' 分割 key
+       7.2 逐层创建/访问 _config
+       7.3 设置最终值
+
+    8. _apply_env_overrides():
+       8.1 遍历所有 DEVSPEC_ 前缀的环境变量
+       8.2 将 DEVSPEC_DATABASE_PATH 转换为 database.path
+       8.3 覆盖 _config 中对应的值
+
+    9. _deep_merge(base, override):
+       9.1 如果都是 dict，递归合并
+       9.2 否则 override 覆盖 base
+       9.3 返回合并结果
+
+  constants:
+    DEFAULT_CONFIG:
+      database:
+        path: ".specgraph/.runtime/specgraph.db"
+      logging:
+        level: "INFO"
+        format: "rich"
+      spec:
+        root: ".specgraph"
+    ENV_PREFIX: "DEVSPEC_"
+    CONFIG_FILE_NAME: "config.yaml"
+
+  error_handling:
+    - condition: "Config file not found"
+      action: "Log debug, use defaults only"
+    - condition: "Invalid YAML syntax"
+      action: "Log error, skip file, use previous config"
+    - condition: "Invalid key format"
+      action: "Log warning, return default"

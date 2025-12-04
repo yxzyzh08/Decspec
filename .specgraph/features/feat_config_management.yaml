@@ -1,0 +1,30 @@
+# Feature Definition: Config Management
+# Part of Infrastructure (L0: dom_infra)
+
+id: feat_config_management
+domain: dom_infra
+source_anchor: "PRD.md#feat_config_management"
+intent: "Provide unified configuration management with layered overrides, type safety, and namespace isolation."
+
+user_stories:
+  - "As a developer, I want to access configuration values with type safety and default fallbacks."
+  - "As an operator, I want to override config values via environment variables without modifying files."
+  - "As the system, I want to merge configs from multiple sources (defaults, files, env vars) in priority order."
+  - "As a developer, I want to organize configs into namespaces to avoid key collisions."
+
+workflow:
+  - step: 1
+    action: "Load default configuration values"
+    output: "Base config dictionary"
+  - step: 2
+    action: "Load and merge config files (.yaml, .json)"
+    output: "File-overridden config"
+  - step: 3
+    action: "Apply environment variable overrides"
+    output: "Final merged config"
+  - step: 4
+    action: "Provide typed access via get_config(key, default)"
+    output: "Type-safe config values"
+
+realized_by:
+  - comp_config_manager

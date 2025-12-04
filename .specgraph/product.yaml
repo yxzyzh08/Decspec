@@ -1,17 +1,64 @@
-# Product Root Definition
-id: "prod_devspec"
+# Product Root Definition (L-1 Level)
+# 职责：定义产品愿景和领域概要，不包含 Feature 列表
+# Feature 属于哪个 Domain 由 Feature YAML 中的 domain 字段声明
+
+id: prod_devspec
 name: "DevSpec"
-version: "0.1.0"
+version: "0.3.0"
+
+# Product Vision - 用于需求分析 Step 2: 判断是否符合 Vision
 description: "A self-evolving, serial conversational intelligent pair-programming environment."
+vision: |
+  DevSpec 是专为 "Super Individuals" (超级个体) 设计的串行会话式智能结对编程环境。
+  它不仅是开发业务软件的工具，更是一个自我进化的生命体 (Self-Evolving Life Form)。
+  核心理念：Spec First (文档是唯一事实来源), Serial Flow (专注单任务), Recursive Evolution (工具由工具自身构建)。
+
+# Domain 概要 (L0 Level) - 用于需求分析 Step 3: 分析涉及的 Domain
+# 注意：不包含 features 列表，Domain → Feature 关系通过 Feature.domain 字段建立
 domains:
-  - id: "dom_core"
+  - id: dom_core
     name: "Core Engine"
-    description: "The brain of the system, handling the knowledge graph and context."
-    features:
-      - "feat_requirement_collector"
-  - id: "dom_cli"
+    description: "系统的'大脑'，负责维护知识图谱、解析代码、管理上下文。"
+    exports:
+      - name: "query_graph"
+        signature: "query_graph(query: GraphQuery) -> List[Node]"
+        description: "Query the SpecGraph knowledge graph"
+      - name: "get_context"
+        signature: "get_context(node_id: str, depth: int = 1) -> NodeGraph"
+        description: "Get node context with related nodes"
+      - name: "sync_graph"
+        signature: "sync_graph() -> SyncResult"
+        description: "Sync YAML files to database"
+
+  - id: dom_cli
     name: "CLI Interface"
-    description: "The user interaction layer using Typer."
-  - id: "dom_quality"
+    description: "系统的'嘴巴'和'耳朵'，负责与用户交互。"
+    exports:
+      - name: "run_command"
+        signature: "run_command(cmd: str, args: List[str]) -> int"
+        description: "Execute a CLI command"
+
+  - id: dom_quality
     name: "Quality Assurance"
-    description: "Tools for testing and auditing code compliance."
+    description: "系统的'免疫系统'，负责确保代码与 Spec 的一致性。"
+    exports:
+      - name: "check_consistency"
+        signature: "check_consistency() -> ConsistencyReport"
+        description: "Check PRD and YAML consistency"
+
+  - id: dom_infra
+    name: "Infrastructure"
+    description: "系统的'血液循环'，提供日志、配置、错误处理等横切基础设施能力。"
+    exports:
+      - name: "get_logger"
+        signature: "get_logger(name: str) -> Logger"
+        description: "Get a named Logger instance"
+      - name: "get_config"
+        signature: "get_config(key: str, default: Any = None) -> Any"
+        description: "Get a configuration value"
+      - name: "load_config"
+        signature: "load_config(path: Path) -> Dict"
+        description: "Load configuration from file"
+      - name: "handle_error"
+        signature: "handle_error(error: Exception, context: Dict) -> None"
+        description: "Unified error handling"

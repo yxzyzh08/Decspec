@@ -1,0 +1,164 @@
+# Component Definition: Error Handler
+# Implements: feat_error_handling
+
+id: comp_error_handler
+type: module
+desc: "Error capture, classification, and handling with context enrichment."
+file_path: "devspec/infra/errors.py"
+
+tech_stack:
+  - "traceback (stdlib)"
+  - "Rich"
+
+dependencies:
+  - comp_logger_factory  # For error logging
+
+design:
+  api:
+    - signature: "def handle_error(error: Exception, context: Dict = None) -> None"
+      desc: "Handle an error with optional context."
+      params:
+        - name: "error"
+          type: "Exception"
+          desc: "The exception to handle"
+        - name: "context"
+          type: "Dict | None"
+          desc: "Additional context (function name, parameters, etc.)"
+
+    - signature: "class DevSpecError(Exception)"
+      desc: "Base exception for all DevSpec errors"
+      fields:
+        - name: "message"
+          type: "str"
+          desc: "Error message"
+        - name: "recoverable"
+          type: "bool"
+          desc: "Whether this error can be recovered from"
+        - name: "user_message"
+          type: "str"
+          desc: "User-friendly error message"
+
+    - signature: "class ConfigError(DevSpecError)"
+      desc: "Configuration-related errors"
+
+    - signature: "class SyncError(DevSpecError)"
+      desc: "Sync-related errors (YAML, database)"
+
+    - signature: "class QueryError(DevSpecError)"
+      desc: "Query-related errors"
+
+    - signature: "class ErrorHandler"
+      desc: "Error handling class"
+      methods:
+        - signature: "handle(error: Exception, context: Dict = None) -> None"
+          desc: "Handle an error."
+          params:
+            - name: "error"
+              type: "Exception"
+              desc: "Exception to handle"
+            - name: "context"
+              type: "Dict | None"
+              desc: "Additional context"
+
+        - signature: "classify(error: Exception) -> str"
+          desc: "Classify error type."
+          params:
+            - name: "error"
+              type: "Exception"
+              desc: "Exception to classify"
+          returns:
+            type: "str"
+            desc: "Classification: 'recoverable', 'fatal', 'unknown'"
+
+        - signature: "enrich(error: Exception, context: Dict = None) -> EnrichedError"
+          desc: "Enrich error with context."
+          params:
+            - name: "error"
+              type: "Exception"
+              desc: "Original exception"
+            - name: "context"
+              type: "Dict | None"
+              desc: "Additional context"
+          returns:
+            type: "EnrichedError"
+            desc: "Enriched error with full context"
+
+        - signature: "format_user_message(error: Exception) -> str"
+          desc: "Format error for user display."
+          params:
+            - name: "error"
+              type: "Exception"
+              desc: "Exception to format"
+          returns:
+            type: "str"
+            desc: "User-friendly message"
+
+    - signature: "class EnrichedError"
+      desc: "Error with full context"
+      fields:
+        - name: "original"
+          type: "Exception"
+          desc: "Original exception"
+        - name: "classification"
+          type: "str"
+          desc: "Error classification"
+        - name: "timestamp"
+          type: "datetime"
+          desc: "When error occurred"
+        - name: "stack_trace"
+          type: "str"
+          desc: "Full stack trace"
+        - name: "context"
+          type: "Dict"
+          desc: "Additional context"
+        - name: "user_message"
+          type: "str"
+          desc: "User-friendly message"
+
+  logic: |
+    1. handle_error(error, context):
+       1.1 获取 ErrorHandler 实例
+       1.2 调用 handler.handle(error, context)
+
+    2. ErrorHandler.handle(error, context):
+       2.1 调用 classify(error) 获取分类
+       2.2 调用 enrich(error, context) 获取完整信息
+       2.3 使用 logger 记录错误:
+           - 如果 fatal: logger.error()
+           - 如果 recoverable: logger.warning()
+       2.4 如果是 DevSpecError，使用 user_message
+       2.5 如果配置为 DEBUG 模式，打印完整 stack trace
+
+    3. ErrorHandler.classify(error):
+       3.1 如果是 DevSpecError:
+           3.1.1 返回 'recoverable' if error.recoverable else 'fatal'
+       3.2 如果是 FileNotFoundError, PermissionError: 返回 'recoverable'
+       3.3 如果是 KeyboardInterrupt, SystemExit: 返回 'fatal'
+       3.4 其他: 返回 'unknown'
+
+    4. ErrorHandler.enrich(error, context):
+       4.1 获取当前时间戳
+       4.2 获取 stack trace: traceback.format_exc()
+       4.3 合并 context (如果有)
+       4.4 调用 format_user_message(error)
+       4.5 构建 EnrichedError 返回
+
+    5. ErrorHandler.format_user_message(error):
+       5.1 如果是 DevSpecError，使用 error.user_message
+       5.2 否则根据错误类型生成友好消息:
+           - FileNotFoundError: "File not found: {path}"
+           - PermissionError: "Permission denied: {path}"
+           - yaml.YAMLError: "Invalid YAML syntax"
+           - 其他: "An unexpected error occurred"
+
+  constants:
+    ERROR_MESSAGES:
+      FileNotFoundError: "File not found: {}"
+      PermissionError: "Permission denied: {}"
+      YAMLError: "Invalid YAML syntax in file"
+      ConnectionError: "Database connection failed"
+      DEFAULT: "An unexpected error occurred. Please check the logs for details."
+
+  error_handling:
+    - condition: "Error during error handling"
+      action: "Fall back to stderr print, never raise"

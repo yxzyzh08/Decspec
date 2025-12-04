@@ -1,0 +1,200 @@
+# Component Definition: Graph Database
+# Implements: feat_specgraph_database
+
+id: comp_graph_database
+type: module
+desc: "SQLite database model and connection management for SpecGraph persistence."
+file_path: "devspec/core/graph_database.py"
+
+tech_stack:
+  - "SQLModel"
+  - "SQLite"
+
+dependencies:
+  - comp_config_manager  # For database path configuration
+
+design:
+  api:
+    - signature: "class GraphDatabase"
+      desc: "Main database manager class"
+      methods:
+        - signature: "__init__(self, db_path: Path = None) -> None"
+          desc: "Initialize database connection. Uses default path if not specified."
+          params:
+            - name: "db_path"
+              type: "Path | None"
+              desc: "Path to SQLite database file. Defaults to .specgraph/.runtime/specgraph.db"
+
+        - signature: "create_tables(self) -> None"
+          desc: "Create all required tables if they don't exist."
+
+        - signature: "get_session(self) -> Session"
+          desc: "Get a database session for transactions."
+          returns:
+            type: "Session"
+            desc: "SQLModel session object"
+
+        - signature: "upsert_node(self, node: NodeModel) -> None"
+          desc: "Insert or update a node in the database."
+          params:
+            - name: "node"
+              type: "NodeModel"
+              desc: "Node data to upsert"
+
+        - signature: "upsert_edge(self, edge: EdgeModel) -> None"
+          desc: "Insert or update an edge in the database."
+          params:
+            - name: "edge"
+              type: "EdgeModel"
+              desc: "Edge data to upsert"
+
+        - signature: "delete_node(self, node_id: str) -> None"
+          desc: "Delete a node and its related edges."
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "ID of node to delete"
+
+        - signature: "get_node(self, node_id: str) -> NodeModel | None"
+          desc: "Retrieve a node by ID."
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "Node ID to retrieve"
+          returns:
+            type: "NodeModel | None"
+            desc: "Node data or None if not found"
+
+    - signature: "class NodeModel(SQLModel, table=True)"
+      desc: "SQLModel for nodes table"
+      fields:
+        - name: "id"
+          type: "str"
+          desc: "Primary key, node ID (e.g., feat_xxx, comp_xxx)"
+        - name: "type"
+          type: "str"
+          desc: "Node type (product, domain, feature, component, design, substrate)"
+        - name: "name"
+          type: "str"
+          desc: "Human-readable name"
+        - name: "description"
+          type: "str | None"
+          desc: "Node description"
+        - name: "source_file"
+          type: "str | None"
+          desc: "Source YAML file path"
+        - name: "source_anchor"
+          type: "str | None"
+          desc: "PRD anchor reference"
+        - name: "intent"
+          type: "str | None"
+          desc: "Purpose/intent of the node"
+        - name: "file_path"
+          type: "str | None"
+          desc: "Physical file path (for components)"
+        - name: "content_hash"
+          type: "str | None"
+          desc: "Hash of YAML content for change detection"
+        - name: "raw_yaml"
+          type: "str | None"
+          desc: "Original YAML content"
+        - name: "created_at"
+          type: "datetime"
+          desc: "Creation timestamp"
+        - name: "updated_at"
+          type: "datetime"
+          desc: "Last update timestamp"
+
+    - signature: "class EdgeModel(SQLModel, table=True)"
+      desc: "SQLModel for edges table"
+      fields:
+        - name: "id"
+          type: "int | None"
+          desc: "Auto-increment primary key"
+        - name: "source_id"
+          type: "str"
+          desc: "Source node ID"
+        - name: "target_id"
+          type: "str"
+          desc: "Target node ID"
+        - name: "relation"
+          type: "str"
+          desc: "Relation type (contains, owns, depends_on, realized_by, etc.)"
+        - name: "metadata"
+          type: "str | None"
+          desc: "JSON-encoded metadata"
+        - name: "created_at"
+          type: "datetime"
+          desc: "Creation timestamp"
+
+    - signature: "class DomainAPIModel(SQLModel, table=True)"
+      desc: "SQLModel for domain_apis table"
+      fields:
+        - name: "id"
+          type: "int | None"
+          desc: "Auto-increment primary key"
+        - name: "domain_id"
+          type: "str"
+          desc: "Domain node ID"
+        - name: "api_name"
+          type: "str"
+          desc: "API function name"
+        - name: "signature"
+          type: "str"
+          desc: "Function signature"
+        - name: "description"
+          type: "str | None"
+          desc: "API description"
+
+  logic: |
+    1. 初始化:
+       1.1 如果未指定 db_path，使用默认路径 .specgraph/.runtime/specgraph.db
+       1.2 创建父目录 (Path.mkdir(parents=True, exist_ok=True))
+       1.3 创建 SQLModel engine: create_engine(f"sqlite:///{db_path}")
+
+    2. create_tables():
+       2.1 调用 SQLModel.metadata.create_all(engine)
+       2.2 创建 nodes, edges, domain_apis 三张表
+
+    3. get_session():
+       3.1 返回 Session(engine) 上下文管理器
+
+    4. upsert_node(node):
+       4.1 使用 session.merge(node) 实现 upsert
+       4.2 更新 updated_at 时间戳
+       4.3 session.commit()
+
+    5. upsert_edge(edge):
+       5.1 查询是否存在相同 (source_id, target_id, relation) 的边
+       5.2 如果存在，更新 metadata
+       5.3 如果不存在，插入新边
+       5.4 session.commit()
+
+    6. delete_node(node_id):
+       6.1 删除所有 source_id 或 target_id 为 node_id 的边
+       6.2 删除节点本身
+       6.3 session.commit()
+
+    7. get_node(node_id):
+       7.1 session.get(NodeModel, node_id)
+       7.2 返回节点或 None
+
+  constants:
+    DEFAULT_DB_PATH: ".specgraph/.runtime/specgraph.db"
+    RELATION_TYPES:
+      - "contains"      # Product -> Domain
+      - "owns"          # Domain -> Feature
+      - "depends_on"    # Feature -> Feature, Component -> Component
+      - "realized_by"   # Feature -> Component
+      - "binds_to"      # Component -> CodeFile
+      - "exports"       # Domain -> DomainAPI
+      - "consumes"      # Feature -> DomainAPI
+      - "references"    # Design/Substrate cross-references
+
+  error_handling:
+    - condition: "Database file not writable"
+      action: "Raise PermissionError with clear message"
+    - condition: "Foreign key constraint violation"
+      action: "Log warning, skip the edge, continue processing"
+    - condition: "Duplicate node ID"
+      action: "Merge/update existing node (upsert behavior)"

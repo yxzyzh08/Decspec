@@ -1,0 +1,35 @@
+# Feature Definition: SpecGraph Database
+# Part of Core Engine (L0: dom_core)
+
+id: feat_specgraph_database
+domain: dom_core
+source_anchor: "PRD.md#feat_specgraph_database"
+intent: "Provide persistent storage and query capabilities for the SpecGraph knowledge graph using SQLite."
+
+user_stories:
+  - "As the system, I want to persist SpecGraph nodes and edges to SQLite for fast querying."
+  - "As a developer, I want to sync YAML files to the database automatically when they change."
+  - "As an AI assistant, I want to query nodes by type, relationship, or path for precise context loading."
+  - "As the system, I want to register and query Domain-exported APIs for cross-domain collaboration."
+
+workflow:
+  - step: 1
+    action: "Load all YAML files from .specgraph directory"
+    output: "Raw node data with content hashes"
+  - step: 2
+    action: "Compare content hashes with database records"
+    output: "List of changed/new/deleted nodes"
+  - step: 3
+    action: "Sync changes to database (upsert nodes, update edges)"
+    output: "Updated database state"
+  - step: 4
+    action: "Provide query API for Context Assembler"
+    output: "Filtered node sets based on query criteria"
+
+depends_on:
+  - feat_specgraph_engine  # Depends on SpecGraph Engine for node definitions
+
+realized_by:
+  - comp_graph_database
+  - comp_graph_sync
+  - comp_graph_query

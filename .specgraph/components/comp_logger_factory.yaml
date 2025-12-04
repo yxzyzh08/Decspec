@@ -1,0 +1,117 @@
+# Component Definition: Logger Factory
+# Implements: feat_logging
+
+id: comp_logger_factory
+type: module
+desc: "Logger creation and configuration, managing logger instance pool."
+file_path: "devspec/infra/logger.py"
+
+tech_stack:
+  - "logging (stdlib)"
+  - "Rich"
+
+dependencies: []
+
+design:
+  api:
+    - signature: "def get_logger(name: str) -> Logger"
+      desc: "Get or create a named logger instance."
+      params:
+        - name: "name"
+          type: "str"
+          desc: "Logger name, typically module path (e.g., 'devspec.core.sync')"
+      returns:
+        type: "Logger"
+        desc: "Configured logger instance"
+
+    - signature: "def configure_logging(level: str = 'INFO', format: str = 'rich', log_file: Path = None) -> None"
+      desc: "Configure global logging settings."
+      params:
+        - name: "level"
+          type: "str"
+          desc: "Log level (DEBUG, INFO, WARNING, ERROR, CRITICAL)"
+        - name: "format"
+          type: "str"
+          desc: "Output format: 'rich' (console with colors), 'json' (structured), 'plain' (no colors)"
+        - name: "log_file"
+          type: "Path | None"
+          desc: "Optional file path for log output"
+
+    - signature: "class LoggerFactory"
+      desc: "Factory class for logger management"
+      methods:
+        - signature: "get_instance() -> LoggerFactory"
+          desc: "Get singleton factory instance."
+          returns:
+            type: "LoggerFactory"
+            desc: "Singleton instance"
+
+        - signature: "create_logger(name: str) -> Logger"
+          desc: "Create or retrieve a logger."
+          params:
+            - name: "name"
+              type: "str"
+              desc: "Logger name"
+          returns:
+            type: "Logger"
+            desc: "Logger instance"
+
+        - signature: "set_level(name: str, level: str) -> None"
+          desc: "Set log level for a specific logger."
+          params:
+            - name: "name"
+              type: "str"
+              desc: "Logger name (or 'root' for all)"
+            - name: "level"
+              type: "str"
+              desc: "Log level"
+
+  logic: |
+    1. get_logger(name):
+       1.1 获取 LoggerFactory 单例
+       1.2 调用 factory.create_logger(name)
+       1.3 返回 logger 实例
+
+    2. configure_logging(level, format, log_file):
+       2.1 获取 root logger
+       2.2 设置 level
+       2.3 根据 format 选择 handler:
+           - 'rich': RichHandler (from rich.logging)
+           - 'json': JsonHandler (自定义，输出 JSON 行)
+           - 'plain': StreamHandler
+       2.4 如果指定 log_file:
+           2.4.1 创建 FileHandler
+           2.4.2 添加到 root logger
+
+    3. LoggerFactory.get_instance():
+       3.1 使用模块级变量 _instance
+       3.2 如果 _instance 为 None，创建新实例
+       3.3 返回 _instance
+
+    4. LoggerFactory.create_logger(name):
+       4.1 检查内部缓存 _loggers
+       4.2 如果存在，返回缓存的 logger
+       4.3 如果不存在:
+           4.3.1 logging.getLogger(name)
+           4.3.2 继承 root logger 的 handler
+           4.3.3 缓存并返回
+
+    5. LoggerFactory.set_level(name, level):
+       5.1 获取 logger (name 或 root)
+       5.2 logger.setLevel(level)
+
+  constants:
+    DEFAULT_FORMAT: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    JSON_FORMAT: '{"time": "%(asctime)s", "name": "%(name)s", "level": "%(levelname)s", "message": "%(message)s"}'
+    LOG_LEVELS:
+      - "DEBUG"
+      - "INFO"
+      - "WARNING"
+      - "ERROR"
+      - "CRITICAL"
+
+  error_handling:
+    - condition: "Invalid log level"
+      action: "Log warning, use INFO as default"
+    - condition: "Log file not writable"
+      action: "Log warning to console, skip file handler"

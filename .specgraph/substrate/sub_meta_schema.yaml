@@ -26,16 +26,45 @@ source_anchor: "PRD.md#sub_meta_schema"
 #   - 示例：sub_tech_stack, sub_meta_schema, sub_coding_style
 # ============================================================
 
-# 1. 根节点规范 (Root Node)
+# 1. 根节点规范 (Root Node - L-1 Level)
+# Product 只定义愿景和领域概要，不包含 Feature 列表
 product_schema:
   path: ".specgraph/product.yaml"
   naming_convention: "product.yaml"
+  purpose: |
+    Product 是 SpecGraph 的根节点，定义产品愿景和领域划分。
+    用于需求分析流程：
+    - Step 2: 判断需求是否符合 Vision (读取 vision/description)
+    - Step 3: 分析涉及的 Domain (读取 domains 概要)
   required_fields:
     - id: "prod_{name}"
     - name: "Product Name"
     - version: "Semantic Versioning (x.y.z)"
-    - domains: "List of Domain objects {id, name, description}"
     - description: "High-level product summary"
+    - domains: "List of Domain objects (L0 概要)"
+  optional_fields:
+    - vision: "Detailed product vision statement (用于 AI 判断需求是否符合愿景)"
+
+  # Domain 对象结构 (嵌套在 product.yaml 中)
+  domain_object_schema:
+    required_fields:
+      - id: "dom_{snake_case_name}"
+      - name: "Human readable domain name"
+      - description: "Domain responsibility description"
+    optional_fields:
+      - exports: "List of Domain API objects (跨 Domain 协作接口)"
+    # 注意：不包含 features 字段！
+    # Domain → Feature 关系通过 Feature YAML 的 domain 字段建立
+    forbidden_fields:
+      - features: "Feature 列表不应在 Domain 中声明，应由 Feature.domain 字段反向建立关系"
+
+  # Domain API 对象结构
+  domain_api_schema:
+    required_fields:
+      - name: "API function name"
+      - signature: "Function signature with type hints"
+    optional_fields:
+      - description: "API description"
 
 # 2. 功能节点规范 (Feature Node - L1)
 feature_schema:
@@ -53,6 +82,7 @@ feature_schema:
   optional_fields:
     - user_stories: "List of strings"
     - realized_by: "List of Component IDs"
+    - depends_on: "List of other Feature IDs (Explicit Dependency)"
     - workflow: "Step-by-step interaction flow"
 
 # 3. 组件节点规范 (Component Node - L2)

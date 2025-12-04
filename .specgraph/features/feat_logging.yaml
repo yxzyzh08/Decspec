@@ -1,0 +1,27 @@
+# Feature Definition: Logging
+# Part of Infrastructure (L0: dom_infra)
+
+id: feat_logging
+domain: dom_infra
+source_anchor: "PRD.md#feat_logging"
+intent: "Provide unified logging capabilities with structured output, level control, and multi-target support."
+
+user_stories:
+  - "As a developer, I want to create named loggers for each module to track module-specific logs."
+  - "As an operator, I want to adjust log levels at runtime without restarting the application."
+  - "As the system, I want to output logs in JSON format for log aggregation and analysis."
+  - "As a developer, I want to send logs to multiple targets (console, file, remote) simultaneously."
+
+workflow:
+  - step: 1
+    action: "Request logger by module name via get_logger(name)"
+    output: "Named Logger instance"
+  - step: 2
+    action: "Logger inherits configuration from parent loggers"
+    output: "Configured logger with appropriate handlers"
+  - step: 3
+    action: "Log messages with level, timestamp, and context"
+    output: "Formatted log entries to configured targets"
+
+realized_by:
+  - comp_logger_factory

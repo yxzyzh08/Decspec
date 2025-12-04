@@ -102,11 +102,12 @@
 
 ### 2.5 Domain Model <!-- id: des_domain_model -->
 
-DevSpec 的核心架构分为三大领域：
+DevSpec 的核心架构分为四大领域：
 
 *   **Core Engine (核心引擎)**: 系统的"大脑"，负责维护知识图谱、解析代码、管理上下文。
 *   **CLI Interface (命令行界面)**: 系统的"嘴巴"和"耳朵"，负责与用户交互。
 *   **Quality Assurance (质量保障)**: 系统的"免疫系统"，负责确保代码与 Spec 的一致性。
+*   **Infrastructure (基础设施)**: 系统的"血液循环"，提供日志、配置、错误处理等横切能力。
 
 ### 2.6 Technical Strategy <!-- id: des_tech_strategy -->
 
@@ -176,35 +177,130 @@ SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质
 
 ### 3.3 Feature: SpecGraph Engine <!-- id: feat_specgraph_engine -->
 
-维护 L1-L3 的多层级知识图谱。
+维护 L0-L3 的多层级知识图谱。
 
+*   **L0 (Domain Layer)**: Domain (领域) —— *定义战略版图和职责边界*。
 *   **L1 (Requirement Layer)**: Feature (功能), Requirement (需求) —— *定义"要做什么"*。
 *   **L2 (Design Layer)**: Component (组件), API (接口), DataModel (模型) —— *定义"怎么做"*。
 *   **L3 (Implementation Layer)**: Code Symbols (Function, Class) —— *代码的物理投影，由 Scanner 自动维护*。
 
-### 3.4 Feature: Code Scanner <!-- id: feat_code_scanner -->
+### 3.4 Feature: SpecGraph Database <!-- id: feat_specgraph_database -->
+
+基于 SQLite 的知识图谱持久化与查询引擎，支持 YAML 与数据库的双向同步。
+
+**Core Functions (核心功能)**:
+1.  **Graph Storage (图存储)**: 将 SpecGraph 节点 (Domain, Feature, Component, Design, Substrate) 和边 (关系) 持久化到 SQLite。
+2.  **Bidirectional Sync (双向同步)**: YAML 是 Source of Truth，数据库是运行时缓存。支持 YAML → DB 同步和增量更新。
+3.  **Graph Query (图查询)**: 支持按类型、关系、路径的查询，为 Context Assembler 提供精确的节点加载能力。
+4.  **Domain API Registry (域 API 注册)**: 注册和查询 Domain 导出的公开 API，支持跨域协作。
+
+**Relation Types (关系类型)**:
+| Relation | Source | Target | Description |
+| :--- | :--- | :--- | :--- |
+| `contains` | Product | Domain | Product 包含 Domains |
+| `owns` | Domain | Feature | Domain 拥有 Features |
+| `depends_on` | Feature | Feature | Feature 前置依赖 |
+| `realized_by` | Feature | Component | Feature 由 Components 实现 |
+| `depends_on` | Component | Component | Component 技术依赖 |
+| `binds_to` | Component | CodeFile | Component 绑定到物理文件 |
+| `exports` | Domain | DomainAPI | Domain 导出公开 API |
+| `consumes` | Feature | DomainAPI | Feature 消费其他 Domain 的 API |
+
+**Components**:
+*   **Graph Database** <!-- id: comp_graph_database -->: SQLite 数据库模型与连接管理，定义 nodes/edges/domain_apis 表结构。
+*   **Graph Sync** <!-- id: comp_graph_sync -->: YAML → DB 同步引擎，支持增量更新与变更检测。
+*   **Graph Query** <!-- id: comp_graph_query -->: 图查询接口，支持节点查询、关系遍历、路径搜索。
+
+### 3.5 Feature: Code Scanner <!-- id: feat_code_scanner -->
 
 基于 Tree-sitter 的代码分析与索引。
 
-### 3.5 Feature: Context Assembler <!-- id: feat_context_assembler -->
+### 3.6 Feature: Context Assembler <!-- id: feat_context_assembler -->
 
 为 AI 组装最小充分上下文。
 
-### 3.6 Feature: Requirement Collector <!-- id: feat_requirement_collector -->
+### 3.7 Feature: Requirement Collector <!-- id: feat_requirement_collector -->
 
-负责收集、分析和分解用户需求，但不直接修改代码。
+通过对话式流程收集、理解和分解用户需求。核心理念：**理解优先于分解，对话优先于流程**。
 
-**Core Functions (核心功能)**:
-1.  **Raw Logging (原始记录)**: 将用户的原始想法或要求追加到原始需求文档，不做任何更改，仅记录时间戳。
-2.  **Analysis & Decomposition (分析与分解)**:
-    *   **Vision Check**: 检查需求是否符合当前 Product Vision。如果不符，明确指出并中止，不更新 PRD。
-    *   **Decomposition**: 如果符合 Vision，按粒度分解任务：
-        *   **Cross-Domain**: 生成 Domain 级别的子任务清单。
-        *   **Domain-Level**: 生成 Feature 级别的子任务清单。
-        *   **Feature-Level**: 生成 Component 级别的子任务清单。
-        *   **Component-Level**: 仅更新 Component。
-3.  **Doc-Only Update (仅文档更新)**: 收集阶段只更新文档 (PRD/SpecGraph)，绝不更新代码。
-4.  **Reporting (报告)**: 输出详细的更新报告，保存到 `reports/` 目录，文件名包含日期和时间。
+**Design Principles (设计原则)**:
+*   **Understanding First**: 先确保理解需求本身，再进行分类和分解。
+*   **Dialogue Over Pipeline**: 需求分析是对话过程，不是单向流水线。
+*   **Soft Vision Boundary**: Vision 是可协商的边界，不是硬性拒绝条件。
+*   **Spec-Change Awareness**: 区分"需要更新 Spec"和"只需修改代码"的需求。
+
+**Dialogue Flow (对话流程)**:
+
+```
+Phase 1: Understanding (理解需求)
+├── 1.1 接收用户原始需求
+├── 1.2 加载 Product Vision (理解产品是什么)
+├── 1.3 用自己的话复述需求
+└── 1.4 向用户确认理解是否正确
+         ↓ 用户确认
+
+Phase 2: Locating (定位影响)
+├── 2.1 加载 Domain 概要
+├── 2.2 判断需求涉及哪些 Domain
+├── 2.3 如果涉及多 Domain，说明跨域影响
+├── 2.4 加载相关 Domain 的现有 Feature 列表
+└── 2.5 判断是新增 Feature 还是修改现有 Feature
+         ↓
+
+Phase 3: Evaluating (评估变更)
+├── 3.0 Exhaustiveness Check (穷尽性检查) ← 内置前置步骤
+│   ├── Feature 层: 逐一评估现有 Feature，证明无法满足才新增
+│   └── Component 层: 逐一评估现有 Component，证明无法满足才新增
+├── 3.1 如果是新 Feature (已证明现有 Feature 无法满足):
+│   ├── 检查是否符合 Vision (边界检查)
+│   ├── 如不符合，询问用户是否要扩展 Vision
+│   └── 设计 Feature 的 intent 和 user_stories
+├── 3.2 如果是修改现有 Feature:
+│   ├── 加载 Feature 详情和其 Components
+│   ├── Exhaustiveness Check: 评估现有 Components
+│   └── 判断是修改 Component 还是新增 Component (需证明)
+└── 3.3 如果只是代码修改 (不涉及 Spec):
+        └── 直接定位到具体文件，跳过 Spec 更新
+         ↓
+
+Phase 4: Planning (生成计划)
+├── 4.1 生成 Spec 变更清单 (如果有)
+├── 4.2 生成代码变更清单
+├── 4.3 分析依赖关系，确定执行顺序
+└── 4.4 向用户展示计划，请求确认
+         ↓ 用户确认
+
+[Execution 阶段不属于需求收集范围]
+```
+
+**Key Confirmation Points (关键确认点)**:
+*   **Phase 1 结束**: 确认 AI 对需求的理解是否正确
+*   **Phase 4 结束**: 确认执行计划是否符合用户预期
+
+**Exhaustiveness Check (穷尽性检查)**:
+
+在决定新增 Feature 或 Component 之前，AI 必须证明现有节点无法满足需求。这是防止图谱膨胀的关键机制。
+
+*   **Feature 层检查**: 逐一评估相关 Domain 下的现有 Feature，记录每个的排除理由
+*   **Component 层检查**: 逐一评估现有 Feature 下的 Component，记录每个的排除理由
+*   **快速通过条件**: 如果需求明显涉及全新领域，可跳过详细检查并记录原因
+
+检查记录格式示例:
+```yaml
+exhaustiveness_check:
+  level: feature  # or component
+  evaluated:
+    - id: feat_xxx
+      can_satisfy: false
+      reason: "该 Feature 专注于 X，不涉及 Y 能力"
+  conclusion: "现有节点均无法满足，需要新增"
+```
+
+**Output Artifacts (输出产物)**:
+*   **Spec 变更清单**: 需要新增/修改的 PRD 章节、Feature YAML、Component YAML
+*   **代码变更清单**: 需要新增/修改的代码文件
+*   **执行顺序**: 按依赖关系排序的任务列表
+*   **分析报告**: 保存到 `reports/` 目录，包含完整的分析过程
 
 ---
 
@@ -261,6 +357,59 @@ SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质
 
 **Components**:
 *   **PRD Validator** <!-- id: comp_prd_validator -->: PRD 格式校验核心逻辑，检查章节结构、锚点格式、命名规范。
+
+---
+
+## 6. Domain: Infrastructure (`dom_infra`) <!-- id: dom_infra -->
+
+**Description**: 系统的"血液循环"，提供日志、配置、错误处理等横切基础设施能力。这些能力被所有其他 Domain 消费，但不属于任何特定业务领域。
+
+**Domain Exports (域导出 API)**:
+| API | Signature | Description |
+| :--- | :--- | :--- |
+| `get_logger` | `get_logger(name: str) -> Logger` | 获取命名 Logger 实例 |
+| `get_config` | `get_config(key: str, default: Any = None) -> Any` | 获取配置值 |
+| `load_config` | `load_config(path: Path) -> Dict` | 从文件加载配置 |
+| `handle_error` | `handle_error(error: Exception, context: Dict) -> None` | 统一错误处理 |
+
+### 6.1 Feature: Logging <!-- id: feat_logging -->
+
+提供统一的日志记录能力，支持结构化日志、日志级别控制、输出目标配置。
+
+**Core Functions (核心功能)**:
+1.  **Named Loggers**: 按模块名创建 Logger，支持层级继承。
+2.  **Structured Output**: 支持 JSON 格式输出，便于日志分析。
+3.  **Level Control**: 支持运行时调整日志级别。
+4.  **Multi-Target**: 支持控制台、文件、远程等多种输出目标。
+
+**Components**:
+*   **Logger Factory** <!-- id: comp_logger_factory -->: Logger 创建与配置，管理 Logger 实例池。
+
+### 6.2 Feature: Config Management <!-- id: feat_config_management -->
+
+提供统一的配置管理能力，支持多层配置合并、环境变量覆盖、类型安全访问。
+
+**Core Functions (核心功能)**:
+1.  **Layered Config**: 支持默认值 → 配置文件 → 环境变量的层级覆盖。
+2.  **Type Safety**: 配置值类型校验与转换。
+3.  **Hot Reload**: 支持配置文件变更检测与热重载（可选）。
+4.  **Namespace**: 支持配置命名空间隔离。
+
+**Components**:
+*   **Config Manager** <!-- id: comp_config_manager -->: 配置加载、合并、访问的核心逻辑。
+
+### 6.3 Feature: Error Handling <!-- id: feat_error_handling -->
+
+提供统一的错误处理能力，支持错误分类、上下文附加、恢复策略。
+
+**Core Functions (核心功能)**:
+1.  **Error Classification**: 区分可恢复错误与致命错误。
+2.  **Context Enrichment**: 自动附加错误上下文（调用栈、参数、时间戳）。
+3.  **Recovery Strategies**: 支持重试、降级、熔断等恢复策略。
+4.  **User-Friendly Messages**: 将技术错误转换为用户友好的提示。
+
+**Components**:
+*   **Error Handler** <!-- id: comp_error_handler -->: 错误捕获、分类、处理的核心逻辑。
 
 ---
 *Generated by DevSpec Agent - strict adherence to Spec-First Protocol.*

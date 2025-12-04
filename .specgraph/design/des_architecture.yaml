@@ -45,3 +45,7 @@ principles:
     desc: "Component 必须物理绑定到文件，支持 Spec ↔ Code 双向追溯。"
   - name: "Design as Code"
     desc: "Component 是代码的设计文档，不是简单的描述。"
+  - name: "Atomicity Rule"
+    desc: "Feature (L1) 是不可再分的最小用户价值单元。禁止 Feature 嵌套。如果 Feature 太大，应拆分为多个平行 Feature 或升级为 Domain。"
+  - name: "Explicit Dependency"
+    desc: "Feature 之间只能通过 `depends_on` 建立依赖关系，或者通过 Domain API 进行交互。"
