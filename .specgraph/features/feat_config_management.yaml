@@ -11,6 +11,8 @@ user_stories:
   - "As an operator, I want to override config values via environment variables without modifying files."
   - "As the system, I want to merge configs from multiple sources (defaults, files, env vars) in priority order."
   - "As a developer, I want to organize configs into namespaces to avoid key collisions."
+  - "As a developer, I want to use a .env file to persist configuration (e.g., DEBUG=true) without command-line parameters."
+  - "As a user, I want CLI parameters to override .env file settings for flexibility."
 
 workflow:
   - step: 1
@@ -20,9 +22,15 @@ workflow:
     action: "Load and merge config files (.yaml, .json)"
     output: "File-overridden config"
   - step: 3
-    action: "Apply environment variable overrides"
-    output: "Final merged config"
+    action: "Load and merge .env file (if exists)"
+    output: ".env file config"
   - step: 4
+    action: "Apply system environment variable overrides (DEVSPEC_* prefix)"
+    output: "System env-overridden config"
+  - step: 5
+    action: "Apply CLI parameter overrides (highest priority)"
+    output: "Final merged config"
+  - step: 6
     action: "Provide typed access via get_config(key, default)"
     output: "Type-safe config values"
 

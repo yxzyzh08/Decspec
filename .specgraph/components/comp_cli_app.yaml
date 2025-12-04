@@ -12,7 +12,9 @@ tech_stack:
   - typer
   - rich
 
-dependencies: []
+dependencies:
+  - comp_cli_debug_logger  # For CLI debug mode support
+  - comp_config_manager     # For configuration and debug mode detection
 
 # === 详细设计 (Design) ===
 design:
@@ -28,5 +30,15 @@ design:
 
   logic: |
     1. 创建 Typer 应用实例 app = typer.Typer()
-    2. 注册子命令 (init, monitor, validate-prd 等)
-    3. main() 函数调用 app() 启动 CLI
+    2. 添加全局 --debug 选项 (通过 Typer callback)
+    3. 应用启动时加载配置:
+       3.1 调用 load_env_file() 加载 .env 文件 (如果存在)
+       3.2 初始化 ConfigManager
+    4. 判断是否启用 Debug 模式:
+       4.1 调用 get_debug_mode(cli_flag=--debug 参数值)
+       4.2 优先级: CLI 参数 > .env 文件 > 默认 False
+    5. 如果 Debug 模式启用:
+       5.1 初始化 CLIDebugLogger
+       5.2 为所有注册的命令添加 debug_command 装饰器
+    6. 注册子命令 (init, monitor, validate-prd, sync 等)
+    7. main() 函数调用 app() 启动 CLI

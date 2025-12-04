@@ -69,8 +69,8 @@ design:
        1.2 获取所有 YAML 文件: spec_dir.rglob("*.yaml")
        1.3 过滤 .runtime 目录
        1.4 对每个文件调用 _sync_yaml_file()
-       1.5 同步 product.yaml 中的虚拟 Domain 节点
-       1.6 构建并同步所有边关系
+       1.5 提取 product.yaml 中的虚拟 Domain 节点 (_extract_domain_nodes)
+       1.6 构建并同步所有边关系 (_build_and_sync_edges)
        1.7 返回 SyncResult
 
     2. _sync_yaml_file(file_path):
@@ -80,14 +80,23 @@ design:
        2.4 调用 db.upsert_node()
        2.5 返回 node_data
 
-    3. _build_edges(nodes_dict):
-       3.1 遍历所有节点
-       3.2 Product -> Domain: 从 product.domains 提取 contains 边
-       3.3 Domain -> Feature: 从 domain.features 提取 owns 边
-       3.4 Feature -> Feature: 从 feature.depends_on 提取 depends_on 边
-       3.5 Feature -> Component: 从 feature.realized_by 提取 realized_by 边
-       3.6 Component -> Component: 从 component.dependencies 提取 depends_on 边
-       3.7 Domain -> DomainAPI: 从 domain.exports 提取 exports 边
+    3. _extract_domain_nodes(product_path):
+       3.1 读取 product.yaml
+       3.2 遍历 domains 列表
+       3.3 为每个 domain 创建虚拟节点，包含:
+           - id, type, name, description
+           - exports 字段 (关键: 必须保留以便后续同步 domain_apis)
+           - _is_virtual 标记
+       3.4 返回 domain_nodes 列表
+
+    4. _build_and_sync_edges(nodes_dict):
+       4.1 遍历所有节点
+       4.2 Product -> Domain: 从 product.domains 提取 contains 边
+       4.3 Domain -> Feature: 从 feature.domain 字段反向建立 owns 边
+       4.4 Feature -> Feature: 从 feature.depends_on 提取 depends_on 边
+       4.5 Feature -> Component: 从 feature.realized_by 提取 realized_by 边
+       4.6 Component -> Component: 从 component.dependencies 提取 depends_on 边
+       4.7 Domain -> DomainAPI: 从 domain.exports 提取 API 并插入 domain_apis 表
 
   constants:
     SKIP_DIRS:

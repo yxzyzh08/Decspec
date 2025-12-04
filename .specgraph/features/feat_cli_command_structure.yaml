@@ -11,6 +11,7 @@ user_stories:
   - "As a user, I want to run `devspec init` to generate slash command files for Claude Code and Gemini CLI."
   - "As a user, I want to run `devspec monitor` to check PRD-Spec consistency and generate a dashboard."
   - "As a user, I want to run `devspec validate-prd` to check if PRD.md follows the format rules."
+  - "As a user, I want to run `devspec sync` to synchronize all YAML files to the database."
   - "As a user, I want to run `devspec tree` to view the product structure (reserved)."
   - "As a user, I want to run `devspec generate <feature_id>` to generate context prompts for a feature (reserved)."
   - "As a developer, I want to easily add new commands with type-safe arguments using Typer."
@@ -28,3 +29,4 @@ realized_by:
   - comp_cli_init
   - comp_cli_monitor
   - comp_cli_validate_prd
+  - comp_cli_sync

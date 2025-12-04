@@ -247,6 +247,7 @@ class GraphSync:
                             "type": "domain",
                             "name": domain.get("name", domain["id"]),
                             "description": domain.get("description"),
+                            "exports": domain.get("exports", []),  # Preserve exports field for domain_apis
                             "_is_virtual": True,
                         }
                         domain_nodes.append(domain_data)

@@ -345,6 +345,7 @@ exhaustiveness_check:
 *   `devspec init` - 初始化项目，为 Claude Code 和 Gemini CLI 生成 slash command 文件。
 *   `devspec monitor` - 运行一致性检查，生成 Dashboard。
 *   `devspec validate-prd` - 校验 PRD.md 格式是否符合规范。
+*   `devspec sync` - 同步所有 YAML 文件到数据库，支持完整的图谱重建。
 *   `devspec tree` - 查看产品结构树（预留）。
 *   `devspec generate <feature_id>` - 为指定 Feature 生成上下文 Prompt（预留）。
 
@@ -353,6 +354,7 @@ exhaustiveness_check:
 *   **Init Command** <!-- id: comp_cli_init -->: `devspec init` 命令实现，生成 `.claude/commands/` 和 `.gemini/commands/` 下的 slash command 文件（包括 `devspec-monitor` 和 `devspec-write-prd`），使 AI CLI 可直接调用 DevSpec 命令。
 *   **Monitor Command** <!-- id: comp_cli_monitor -->: `devspec monitor` 命令实现，调用 ConsistencyMonitor。
 *   **Validate PRD Command** <!-- id: comp_cli_validate_prd -->: `devspec validate-prd` 命令实现，调用 PRD Validator 校验 PRD.md 格式。
+*   **Sync Command** <!-- id: comp_cli_sync -->: `devspec sync` 命令实现，执行完整的 YAML 到数据库同步，包括节点、边和 Domain API。
 
 ### 4.2 Feature: Visual Output <!-- id: feat_cli_visual_output -->
 
@@ -410,22 +412,51 @@ exhaustiveness_check:
 2.  **Structured Output**: 支持 JSON 格式输出，便于日志分析。
 3.  **Level Control**: 支持运行时调整日志级别。
 4.  **Multi-Target**: 支持控制台、文件、远程等多种输出目标。
+5.  **CLI Debug Mode**: 提供命令级别的 Debug 日志，记录所有 CLI 命令的入参、出参和执行时间，用于问题排查。
+
+**CLI Debug Mode (CLI Debug 模式)**:
+*   **触发方式**: 通过 `--debug` 全局 flag 启用（例如：`devspec --debug monitor`）
+*   **日志文件**: `logs/devspec_cli_debug.log`（固定路径，单一文件）
+*   **日志内容**:
+    *   命令名称
+    *   执行时间戳（含日期和时间）
+    *   命令参数（arguments 和 options）
+    *   命令返回结果
+    *   执行耗时
+*   **设计原则**: 简化设计，不支持日志轮转和自动清理
+*   **实现方式**: 面向切面编程（AOP），通过装饰器在 CLI 入口拦截所有命令
 
 **Components**:
 *   **Logger Factory** <!-- id: comp_logger_factory -->: Logger 创建与配置，管理 Logger 实例池。
+*   **CLI Debug Logger** <!-- id: comp_cli_debug_logger -->: 专用于 CLI Debug 模式的日志记录器，拦截命令执行并记录详细信息。
 
 ### 6.2 Feature: Config Management <!-- id: feat_config_management -->
 
 提供统一的配置管理能力，支持多层配置合并、环境变量覆盖、类型安全访问。
 
 **Core Functions (核心功能)**:
-1.  **Layered Config**: 支持默认值 → 配置文件 → 环境变量的层级覆盖。
-2.  **Type Safety**: 配置值类型校验与转换。
-3.  **Hot Reload**: 支持配置文件变更检测与热重载（可选）。
-4.  **Namespace**: 支持配置命名空间隔离。
+1.  **Layered Config**: 支持分层配置优先级：CLI 参数 > 系统环境变量 > 环境变量文件 (`.env`) > 配置文件 (YAML) > 默认值。
+2.  **Environment File Support**: 支持加载 `.env` 文件作为配置源，用于持久化配置（如 `DEBUG=true`）。
+3.  **Type Safety**: 配置值类型校验与转换。
+4.  **Namespace**: 支持配置命名空间隔离（通过 dot-notation 实现）。
+
+**Design Note**: DevSpec 是 CLI 工具，每次执行命令都是独立进程。配置在进程启动时加载一次，进程生命周期内不变。因此不需要 Hot Reload、File Watching、reload() 等特性。
+
+**Configuration Priority (配置优先级，从高到低)**:
+1.  **CLI 运行时参数**（如 `--debug`）
+2.  **系统环境变量**（如 `DEVSPEC_DEBUG=true`，使用 `DEVSPEC_*` 前缀）
+3.  **环境变量文件 `.env`**（如 `DEBUG=true`）
+4.  **YAML 配置文件**（如 `.specgraph/config.yaml`）
+5.  **代码内置默认值**
+
+**Supported Configuration Sources (支持的配置源)**:
+*   `.env` 文件：项目根目录的环境变量文件（用于开发和本地配置）
+*   YAML 配置文件：结构化配置
+*   环境变量：系统级环境变量
+*   CLI 参数：命令行参数
 
 **Components**:
-*   **Config Manager** <!-- id: comp_config_manager -->: 配置加载、合并、访问的核心逻辑。
+*   **Config Manager** <!-- id: comp_config_manager -->: 配置加载、合并、访问的核心逻辑，支持多源配置合并与优先级控制。
 
 ### 6.3 Feature: Error Handling <!-- id: feat_error_handling -->
 

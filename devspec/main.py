@@ -13,6 +13,7 @@ from devspec.commands.init import init
 from devspec.commands.monitor import monitor
 from devspec.commands.validate_prd import validate_prd
 from devspec.commands.context import context
+from devspec.commands.sync import sync
 
 # Initialize Typer app
 app = typer.Typer(
@@ -29,6 +30,7 @@ app.command(name="init", help="Initialize DevSpec for AI CLI integration (Claude
 app.command(name="monitor", help="Run PRD-Spec consistency check and generate dashboard.")(monitor)
 app.command(name="validate-prd", help="Validate PRD.md format against the canonical structure.")(validate_prd)
 app.command(name="context", help="Output phase-specific context for AI agents.")(context)
+app.command(name="sync", help="Synchronize all YAML spec files to the database.")(sync)
 
 
 @app.command(name="tree")

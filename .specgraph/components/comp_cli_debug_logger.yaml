@@ -1,0 +1,176 @@
+# Component Definition: CLI Debug Logger
+# Implements: feat_logging
+
+id: comp_cli_debug_logger
+type: module
+desc: "专用于 CLI Debug 模式的日志记录器，通过装饰器拦截命令执行并记录入参、出参、执行时间。"
+file_path: "devspec/infra/cli_debug_logger.py"
+
+tech_stack:
+  - "logging (Python stdlib)"
+  - "functools (for decorators)"
+  - "datetime"
+  - "pathlib"
+
+dependencies:
+  - comp_logger_factory  # 复用基础 Logger 能力
+  - comp_config_manager  # 读取 Debug 模式配置
+
+design:
+  api:
+    - signature: "def debug_command(func: Callable) -> Callable"
+      desc: "装饰器，为 CLI 命令添加 debug 日志记录（仅在 debug 模式启用时生效）。Public API，由 CLI 命令直接使用。"
+      params:
+        - name: "func"
+          type: "Callable"
+          desc: "被装饰的 CLI 命令函数"
+      returns:
+        type: "Callable"
+        desc: "包装后的命令函数"
+
+    - signature: "def _log_command_start(command_name: str, args: Dict[str, Any], options: Dict[str, Any]) -> str"
+      desc: "记录命令开始执行，返回唯一执行 ID（内部辅助函数）"
+      params:
+        - name: "command_name"
+          type: "str"
+          desc: "命令名称，如 'monitor', 'sync'"
+        - name: "args"
+          type: "Dict[str, Any]"
+          desc: "命令位置参数"
+        - name: "options"
+          type: "Dict[str, Any]"
+          desc: "命令选项参数"
+      returns:
+        type: "str"
+        desc: "执行 ID (timestamp-based)"
+
+    - signature: "def _log_command_end(execution_id: str, result: Any, duration: float, success: bool = True) -> None"
+      desc: "记录命令执行结束及结果（内部辅助函数）"
+      params:
+        - name: "execution_id"
+          type: "str"
+          desc: "执行 ID (由 _log_command_start 返回)"
+        - name: "result"
+          type: "Any"
+          desc: "命令返回结果"
+        - name: "duration"
+          type: "float"
+          desc: "执行耗时（秒）"
+        - name: "success"
+          type: "bool"
+          desc: "是否执行成功"
+
+    - signature: "def _get_debug_logger() -> Logger"
+      desc: "获取或初始化 debug logger 实例（内部辅助函数，懒加载）"
+      returns:
+        type: "Logger"
+        desc: "配置好的 debug logger"
+
+  logic: |
+    模块级变量 (简化设计):
+    - _debug_logger: Optional[Logger] = None  # Debug logger 实例，懒加载
+
+    1. _get_debug_logger() -> Logger:
+       1.1 如果 _debug_logger is not None: 返回 _debug_logger
+       1.2 创建 debug logger:
+           1.2.1 创建日志目录: Path("logs").mkdir(parents=True, exist_ok=True)
+           1.2.2 创建 FileHandler (mode='a', encoding='utf-8', filename='logs/devspec_cli_debug.log')
+           1.2.3 设置 formatter (LOG_FORMAT)
+           1.2.4 创建 logger = logging.getLogger('devspec.cli.debug')
+           1.2.5 设置 level = DEBUG
+           1.2.6 添加 FileHandler 到 logger
+           1.2.7 设置 propagate = False (不传播到 root logger)
+       1.3 缓存到 _debug_logger
+       1.4 返回 logger
+
+    2. _log_command_start(command_name, args, options) -> str:
+       2.1 生成唯一执行 ID: datetime.now().isoformat()
+       2.2 获取 debug logger: _get_debug_logger()
+       2.3 格式化日志消息 (使用 LOG_ENTRY_TEMPLATE):
+           [YYYY-MM-DD HH:MM:SS.ffffff] COMMAND: <command_name>
+             ├─ ARGS: {args}
+             ├─ OPTIONS: {options}
+             └─ START: <timestamp>
+       2.4 logger.info(message)
+       2.5 返回执行 ID
+
+    3. _log_command_end(execution_id, result, duration, success):
+       3.1 获取 debug logger: _get_debug_logger()
+       3.2 格式化日志消息:
+           [YYYY-MM-DD HH:MM:SS.ffffff] RESULT: <execution_id>
+             ├─ STATUS: Success/Failed
+             ├─ DURATION: <duration>s
+             └─ OUTPUT: <result_summary (max 500 chars)>
+       3.3 如果 success: logger.info(message)
+       3.4 否则: logger.error(message)
+
+    4. debug_command(func) 装饰器:
+       4.1 使用 functools.wraps(func) 保留原函数元数据
+       4.2 定义 wrapper 函数:
+           4.2.1 检查 debug 模式是否启用 (调用 get_debug_mode())
+           4.2.2 如果 debug 模式未启用: 直接执行 func(*args, **kwargs) 并返回
+           4.2.3 如果 debug 模式启用:
+                 4.2.3.1 提取命令名称 (func.__name__)
+                 4.2.3.2 提取参数 (args 转为 list, kwargs 转为 dict)
+                 4.2.3.3 调用 _log_command_start(command_name, args_dict, kwargs)
+                 4.2.3.4 记录开始时间: start_time = time.time()
+                 4.2.3.5 执行原命令: result = func(*args, **kwargs)
+                 4.2.3.6 记录结束时间: end_time = time.time()
+                 4.2.3.7 计算耗时: duration = end_time - start_time
+                 4.2.3.8 调用 _log_command_end(execution_id, result, duration, success=True)
+                 4.2.3.9 返回 result
+                 4.2.3.10 异常处理: 捕获所有异常，调用 _log_command_end(..., success=False)，重新抛出异常
+       4.3 返回 wrapper 函数
+
+  constants:
+    DEFAULT_LOG_FILE: "logs/devspec_cli_debug.log"
+    LOG_FORMAT: |
+      [%(asctime)s] %(levelname)s: %(message)s
+    DATE_FORMAT: "%Y-%m-%d %H:%M:%S"
+    LOG_ENTRY_TEMPLATE: |
+      [%(timestamp)s] COMMAND: %(command)s
+        ├─ ARGS: %(args)s
+        ├─ OPTIONS: %(options)s
+        ├─ START: %(start_time)s
+        ├─ END: %(end_time)s
+        ├─ DURATION: %(duration).2fs
+        └─ RESULT: %(status)s
+           %(output)s
+
+  output_files:
+    - path: "logs/devspec_cli_debug.log"
+      format: "追加模式的文本日志文件，每次命令执行追加一条记录"
+      encoding: "utf-8"
+
+  error_handling:
+    - condition: "日志目录创建失败"
+      action: "抛出 OSError，显示错误信息并退出"
+    - condition: "命令执行中抛出异常"
+      action: "捕获异常，在日志中记录 STATUS: Failed 和异常堆栈，然后重新抛出原异常"
+    - condition: "日志文件写入失败"
+      action: "静默失败，输出警告到 stderr，不中断命令执行"
+
+  notes: |
+    Design Rationale (Simplified Decorator):
+    - No Class, Simple Functions: No CLIDebugLogger class. Use module-level functions and lazy initialization.
+      The decorator debug_command() takes only one argument (the function to decorate), making it easy to use.
+
+    - Usage Example:
+      ```python
+      from devspec.infra.cli_debug_logger import debug_command
+
+      @app.command()
+      @debug_command  # No need to pass logger instance!
+      def monitor():
+          ...
+      ```
+
+    - Auto Debug Mode Detection: The decorator automatically checks if debug mode is enabled (via get_debug_mode()).
+      If disabled, the decorator is a no-op (zero overhead).
+
+    - Lazy Logger Initialization: The debug logger is only created when first needed (_get_debug_logger()).
+      This avoids unnecessary file operations if debug mode is not used.
+
+    - Public vs Internal:
+      Public API: debug_command (decorator)
+      Internal helpers: _get_debug_logger(), _log_command_start(), _log_command_end()

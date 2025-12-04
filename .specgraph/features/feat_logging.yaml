@@ -8,20 +8,41 @@ intent: "Provide unified logging capabilities with structured output, level cont
 
 user_stories:
   - "As a developer, I want to create named loggers for each module to track module-specific logs."
-  - "As an operator, I want to adjust log levels at runtime without restarting the application."
-  - "As the system, I want to output logs in JSON format for log aggregation and analysis."
-  - "As a developer, I want to send logs to multiple targets (console, file, remote) simultaneously."
+  - "As an operator, I want to configure log levels via environment variables or config files before running commands."
+  - "As the system, I want to output logs in structured format (rich or JSON) for different use cases."
+  - "As a developer, I want to send logs to multiple targets (console, file) simultaneously."
+  - "As a developer, I want to enable CLI debug mode to record all command executions with input/output details for troubleshooting."
+  - "As a user, I want to run `devspec --debug <command>` to generate detailed execution logs in a debug file."
 
 workflow:
+  # General Logging Workflow (comp_logger_factory)
   - step: 1
-    action: "Request logger by module name via get_logger(name)"
-    output: "Named Logger instance"
+    action: "Configure global logging at CLI entry point (main.py) using configure_logging()"
+    output: "Global logging configuration (level, format, handlers)"
   - step: 2
-    action: "Logger inherits configuration from parent loggers"
-    output: "Configured logger with appropriate handlers"
+    action: "Request logger by module name via get_logger(name)"
+    output: "Named Logger instance with inherited configuration"
   - step: 3
     action: "Log messages with level, timestamp, and context"
-    output: "Formatted log entries to configured targets"
+    output: "Formatted log entries to configured targets (console, file)"
+
+  # CLI Debug Mode Workflow (comp_cli_debug_logger)
+  - step: 4
+    action: "Check if debug mode enabled (--debug flag or DEBUG env var)"
+    output: "Debug mode status (boolean)"
+  - step: 5
+    action: "If debug mode enabled, wrap CLI commands with @debug_command decorator"
+    output: "Decorated command functions"
+  - step: 6
+    action: "On command execution: log command start (name, args, options, timestamp)"
+    output: "Debug log entry in logs/devspec_cli_debug.log"
+  - step: 7
+    action: "Execute command and capture result"
+    output: "Command execution result"
+  - step: 8
+    action: "On command completion: log command end (result, duration, success status)"
+    output: "Debug log entry with execution summary"
 
 realized_by:
   - comp_logger_factory
+  - comp_cli_debug_logger

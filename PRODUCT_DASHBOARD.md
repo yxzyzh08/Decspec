@@ -1,14 +1,14 @@
 # DevSpec Product Dashboard
 
-> **Generated At**: 2025-12-04 18:36:15
+> **Generated At**: 2025-12-04 23:08:47
 > **Phase**: 0 (Genesis Spec)
 
 ## Progress Overview
 
 | Dimension | Progress | Detail |
 | :--- | :--- | :--- |
-| **Schema Compliance** | `[####################]` 100% | 44/44 files |
-| **Spec Sync** | `[##################--]` 93% | 46/49 nodes |
+| **Schema Compliance** | `[####################]` 100% | 46/46 files |
+| **Spec Sync** | `[##################--]` 94% | 48/51 nodes |
 | **Feature Assignment** | `[#############-------]` 68% | 11/16 features |
 | **Overall** | `[#################---]` 85% | Weighted: Schema(30%) + Spec(30%) + Assignment(40%) |
 
@@ -21,10 +21,12 @@
 | `.specgraph\product.yaml` | product | O Valid | - |
 | `.specgraph\components\comp_cli_app.yaml` | component | O Valid | - |
 | `.specgraph\components\comp_cli_context.yaml` | component | O Valid | - |
+| `.specgraph\components\comp_cli_debug_logger.yaml` | component | ! Warnings | [W] file_path: Code file does not exist: devspec/infra/cli_debug_logger.py |
 | `.specgraph\components\comp_cli_init.yaml` | component | O Valid | - |
 | `.specgraph\components\comp_cli_monitor.yaml` | component | O Valid | - |
+| `.specgraph\components\comp_cli_sync.yaml` | component | O Valid | - |
 | `.specgraph\components\comp_cli_validate_prd.yaml` | component | O Valid | - |
-| `.specgraph\components\comp_config_manager.yaml` | component | ! Warnings | [W] file_path: Code file does not exist: devspec/infra/config.py |
+| `.specgraph\components\comp_config_manager.yaml` | component | O Valid | - |
 | `.specgraph\components\comp_consistency_monitor.yaml` | component | O Valid | - |
 | `.specgraph\components\comp_context_assembler.yaml` | component | O Valid | - |
 | `.specgraph\components\comp_error_handler.yaml` | component | ! Warnings | [W] file_path: Code file does not exist: devspec/infra/errors.py |
@@ -92,7 +94,7 @@
 
 | Node ID | Domain | Spec Status | Assignment Status |
 | :--- | :--- | :--- | :--- |
-| `feat_cli_command_structure` | dom_cli | O Synced | O Assigned (4) |
+| `feat_cli_command_structure` | dom_cli | O Synced | O Assigned (5) |
 | `feat_cli_session_management` | dom_cli | O Synced | X Unassigned |
 | `feat_cli_visual_output` | dom_cli | O Synced | X Unassigned |
 | `feat_code_scanner` | dom_core | O Synced | O Assigned (1) |
@@ -100,7 +102,7 @@
 | `feat_consistency_monitor` | dom_core | O Synced | O Assigned (4) |
 | `feat_context_assembler` | dom_core | O Synced | O Assigned (2) |
 | `feat_error_handling` | dom_infra | O Synced | O Assigned (1) |
-| `feat_logging` | dom_infra | O Synced | O Assigned (1) |
+| `feat_logging` | dom_infra | O Synced | O Assigned (2) |
 | `feat_quality_auto_fix` | dom_quality | O Synced | X Unassigned |
 | `feat_quality_compliance_audit` | dom_quality | O Synced | X Unassigned |
 | `feat_quality_drift_detection` | dom_quality | O Synced | X Unassigned |
@@ -117,8 +119,10 @@
 | :--- | :--- | :--- |
 | `comp_cli_app` | feat_cli_command_structure | O Synced |
 | `comp_cli_context` | feat_context_assembler, feat_requirement_collector | X YAML Only |
+| `comp_cli_debug_logger` | feat_logging | O Synced |
 | `comp_cli_init` | feat_cli_command_structure, feat_requirement_collector | O Synced |
 | `comp_cli_monitor` | feat_cli_command_structure | O Synced |
+| `comp_cli_sync` | feat_cli_command_structure | O Synced |
 | `comp_cli_validate_prd` | feat_cli_command_structure | O Synced |
 | `comp_config_manager` | feat_config_management | O Synced |
 | `comp_consistency_monitor` | feat_consistency_monitor | O Synced |

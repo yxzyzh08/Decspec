@@ -1,0 +1,72 @@
+# Component Definition: CLI Sync Command
+# Implements: feat_cli_command_structure
+
+id: comp_cli_sync
+type: module
+desc: "`devspec sync` 命令实现，执行 YAML 到数据库的完整同步。"
+file_path: "devspec/commands/sync.py"
+
+tech_stack:
+  - "typer"
+  - "rich"
+
+dependencies:
+  - comp_graph_database  # For database operations
+  - comp_graph_sync      # For sync logic
+
+design:
+  api:
+    - signature: "def sync() -> None"
+      desc: "Synchronize all YAML spec files to the database."
+      params: []
+      returns:
+        type: "None"
+        desc: "Outputs results to console"
+      raises:
+        - "typer.Exit(1) if .specgraph directory not found"
+        - "typer.Exit(1) if sync fails"
+
+  logic: |
+    1. 验证环境:
+       1.1 检查 .specgraph 目录是否存在
+       1.2 如果不存在，输出错误提示 "Run 'devspec init' first"
+
+    2. 初始化数据库:
+       2.1 获取数据库路径: .specgraph/.runtime/specgraph.db
+       2.2 创建 GraphDatabase 实例
+       2.3 调用 db.create_tables() 确保表结构存在
+
+    3. 执行同步:
+       3.1 创建 GraphSync 实例
+       3.2 调用 sync_engine.sync_all()
+       3.3 捕获异常并显示友好错误信息
+
+    4. 显示同步结果:
+       4.1 使用 Rich Table 显示统计信息:
+           - Nodes added
+           - Nodes updated
+           - Edges created
+       4.2 如果有错误，列出所有错误信息
+       4.3 查询并显示 domain_apis 表的记录数
+       4.4 显示前 5 个 Domain API 示例
+
+    5. 输出提示:
+       5.1 提示用户运行 'devspec monitor' 查看仪表板
+
+  output_files:
+    - path: "console"
+      format: |
+        Rich formatted output:
+        - Cyan: 信息性消息
+        - Green: 成功消息和统计数字
+        - Yellow: 警告消息
+        - Red: 错误消息
+        - Dim: 提示信息
+
+  error_handling:
+    - condition: ".specgraph 目录不存在"
+      action: "显示错误消息，提示运行 devspec init，退出码 1"
+    - condition: "同步过程中发生异常"
+      action: "捕获异常，显示详细错误信息，退出码 1"
+    - condition: "数据库连接失败"
+      action: "显示数据库路径和错误信息，退出码 1"
