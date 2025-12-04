@@ -1,13 +1,30 @@
 # Feature Definition: Context Assembler
 # Part of Core Engine (L0: dom_core)
+# Validated against sub_meta_schema.yaml
 
 id: feat_context_assembler
 domain: dom_core
 source_anchor: "PRD.md#feat_context_assembler"
-intent: "Assemble the minimal sufficient context for AI agents based on the current task."
+intent: "为 AI Agent 组装当前任务所需的最小充分上下文 (Minimal Sufficient Context)，防止 Token 浪费和注意力分散。"
 
 user_stories:
-  - "As an agent, I want to receive relevant PRD sections and Code definitions for my assigned task."
-  - "As a user, I want to ensure the context fits within the token limit."
+  - "As an agent, I want to receive only the Product Vision in Phase 1 so I can understand the high-level goal."
+  - "As an agent, I want to see Domain summaries and Feature lists in Phase 2 so I can locate the relevant area."
+  - "As an agent, I want detailed Component designs in Phase 3 so I can perform Exhaustiveness Checks."
+  - "As an agent, I want dependency graphs in Phase 4 so I can plan the execution order."
 
-realized_by: []
+core_functions:
+  - name: "understanding"
+    desc: "Phase 1: 加载 Product Vision 和 Description"
+  - name: "locating"
+    desc: "Phase 2: 加载 Domain 列表和每个 Domain 下的 Feature 列表 (仅 ID/Name/Intent)"
+  - name: "evaluating"
+    desc: "Phase 3: 加载指定 Feature 的详细信息及其 Component 列表 (用于 Exhaustiveness Check)"
+  - name: "planning"
+    desc: "Phase 4: 加载相关节点的依赖关系图"
+  - name: "coding"
+    desc: "Phase 5: 加载 Component 详细设计和 Substrate 约束"
+
+realized_by:
+  - comp_context_assembler
+  - comp_cli_context

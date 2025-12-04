@@ -1,11 +1,19 @@
 # Design Definition: Documentation Principles
-# Source: PRD.md#des_doc_principle
+# Type: Design (Why & What)
+# Purpose: 解释文档编写原则的设计决策
 
 id: des_documentation
 type: design
 name: "Documentation Principles"
-description: "Rules for maintaining the integrity and synchronicity of the knowledge base."
-source_anchor: "PRD.md#des_doc_principle"
+domain: dom_core
+source_anchor: "PRD.md#des_documentation"
+intent: "定义 PRD 和 YAML 文档的编写原则，解释为什么采用双语结构和锚点注入。"
+
+rationale: |
+  为什么需要这些文档原则？
+  1. **双语结构**: 英文确保机器可读性（ID、路径、代码），中文保留语义细节。
+  2. **锚点注入**: 实现 PRD ↔ YAML 的自动化同步，支持双向追溯。
+  3. **唯一事实来源**: 避免信息碎片化，确保知识一致性。
 
 principles:
   - name: "Bilingual Structure (双语结构)"

@@ -3,12 +3,11 @@
 
 id: comp_graph_sync
 type: module
-desc: "YAML to database synchronization engine with incremental updates and change detection."
+desc: "YAML to database full synchronization engine."
 file_path: "devspec/core/graph_sync.py"
 
 tech_stack:
   - "PyYAML"
-  - "hashlib"
 
 dependencies:
   - comp_graph_database  # For database operations
@@ -45,18 +44,6 @@ design:
             type: "SyncResult"
             desc: "Sync result for this file"
 
-        - signature: "detect_changes(self) -> ChangeSet"
-          desc: "Detect which files have changed since last sync."
-          returns:
-            type: "ChangeSet"
-            desc: "Lists of added, modified, deleted files"
-
-        - signature: "sync_incremental(self) -> SyncResult"
-          desc: "Sync only changed files (incremental sync)."
-          returns:
-            type: "SyncResult"
-            desc: "Sync statistics"
-
     - signature: "class SyncResult"
       desc: "Result of sync operation"
       fields:
@@ -76,39 +63,22 @@ design:
           type: "List[str]"
           desc: "List of error messages"
 
-    - signature: "class ChangeSet"
-      desc: "Set of detected changes"
-      fields:
-        - name: "added"
-          type: "List[Path]"
-          desc: "New YAML files"
-        - name: "modified"
-          type: "List[Path]"
-          desc: "Modified YAML files"
-        - name: "deleted"
-          type: "List[str]"
-          desc: "Node IDs whose files were deleted"
-
   logic: |
     1. sync_all():
-       1.1 获取所有 YAML 文件: spec_dir.rglob("*.yaml")
-       1.2 过滤 .runtime 目录
-       1.3 对每个文件调用 _sync_yaml_file()
-       1.4 同步 product.yaml 中的虚拟 Domain 节点
-       1.5 构建并同步所有边关系
-       1.6 删除数据库中存在但 YAML 已删除的节点
+       1.1 清空数据库中所有节点和边
+       1.2 获取所有 YAML 文件: spec_dir.rglob("*.yaml")
+       1.3 过滤 .runtime 目录
+       1.4 对每个文件调用 _sync_yaml_file()
+       1.5 同步 product.yaml 中的虚拟 Domain 节点
+       1.6 构建并同步所有边关系
        1.7 返回 SyncResult
 
     2. _sync_yaml_file(file_path):
        2.1 读取 YAML 内容
-       2.2 计算 content_hash: hashlib.sha256(content.encode()).hexdigest()
-       2.3 查询数据库中的 content_hash
-       2.4 如果 hash 相同，跳过 (无变化)
-       2.5 如果 hash 不同或不存在:
-           2.5.1 解析 YAML 为 dict
-           2.5.2 提取必要字段构建 NodeModel
-           2.5.3 调用 db.upsert_node()
-       2.6 返回 (is_new, is_updated)
+       2.2 解析 YAML 为 dict
+       2.3 提取必要字段构建 NodeModel
+       2.4 调用 db.upsert_node()
+       2.5 返回 node_data
 
     3. _build_edges(nodes_dict):
        3.1 遍历所有节点
@@ -118,21 +88,6 @@ design:
        3.5 Feature -> Component: 从 feature.realized_by 提取 realized_by 边
        3.6 Component -> Component: 从 component.dependencies 提取 depends_on 边
        3.7 Domain -> DomainAPI: 从 domain.exports 提取 exports 边
-
-    4. detect_changes():
-       4.1 获取数据库中所有节点的 (id, source_file, content_hash)
-       4.2 扫描文件系统中所有 YAML 文件
-       4.3 对比:
-           - 文件存在但 DB 无记录 -> added
-           - 文件存在且 hash 不同 -> modified
-           - DB 有记录但文件不存在 -> deleted
-       4.4 返回 ChangeSet
-
-    5. sync_incremental():
-       5.1 调用 detect_changes() 获取 ChangeSet
-       5.2 只处理 added 和 modified 文件
-       5.3 删除 deleted 节点
-       5.4 返回 SyncResult
 
   constants:
     SKIP_DIRS:

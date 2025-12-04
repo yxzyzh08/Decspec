@@ -6,75 +6,93 @@
 
 ---
 
-## 0. 元指令 (Meta Instructions)
+## 0. 核心法则 (The Prime Directives)
 
-**MANDATORY: Trigger-Action Rules**
+### 0.1 STOP & LISTEN (理解优先)
 
-| Trigger | Action |
-| :--- | :--- |
-| **收到用户需求** | 进入 Section 3 需求分析对话流程，先理解再分解 |
-| **新增 Feature** | MUST 执行 Exhaustiveness Check，证明现有 Feature 无法满足 |
-| **新增 Component** | MUST 执行 Exhaustiveness Check，证明现有 Component 无法满足 |
-| **Modify/Write PRD** | MUST read `.specgraph/design/des_prompt_prd_writer.md` FIRST |
-| **Create Feature YAML** | MUST read schema & architecture. **ENSURE**: (1) `domain` field set to valid `dom_xxx`, (2) `depends_on` used for Feature dependencies, (3) PRD anchor exists |
-| **Create Component YAML** | MUST check parent `feat_{name}.yaml` exists. **ENSURE**: (1) `design.api` and `design.logic` defined, (2) `dependencies` used for Component dependencies, (3) parent Feature's `realized_by` updated |
-| **Run Code** | MUST use `uv run` to ensure environment consistency |
-| **Import Library** | MUST check `substrate/sub_tech_stack.yaml` whitelist before adding dependencies |
+**触发**: 收到用户需求时
+
+> 不要立即开始分解。先复述你对需求的理解，并询问用户："我理解得对吗？"。只有在用户确认后，才能继续。
+
+### 0.2 PROVE NECESSITY (穷尽性检查)
+
+**触发**: 决定新增 Feature 或 Component 前
+
+> 必须先**阅读并理解**相关的现有节点，在内部评估它们为何无法满足需求。只有在确认现有节点均无法满足时，才允许创建新节点。无需向用户列出所有节点，除非需要用户确认决策。
+
+### 0.3 SOFT BOUNDARY (软边界策略)
+
+**触发**: 需求可能超出 Vision 时
+
+> Vision 是可协商的边界，不是硬性拒绝条件。如果需求超出 Vision，询问用户是否要扩展 Vision，而不是直接拒绝。
+
+### 0.4 SYNC SPEC (Spec-代码一致性)
+
+**触发**: 编写或修改代码时
+
+> 代码是 Spec 的投影，Spec 是代码的真理。修改代码后，必须同步更新对应的 Component YAML (`design.api`, `design.logic`)。
+
+### 0.5 FOLLOW SCHEMA (YAML 格式规范)
+
+**触发**: 创建或修改 YAML 文件时
+
+> **权威来源**: `.specgraph/substrate/sub_meta_schema.yaml` 是所有 YAML 格式的唯一权威定义。
+>
+> **创建 YAML 前必须加载 sub_meta_schema.yaml**，确保：
+> *   使用正确的路径模式 (`feat_*.yaml`, `comp_*.yaml`, `des_*.yaml`, `sub_*.yaml`)
+> *   包含所有必填字段 (id, domain, intent 等)
+> *   遵守命名规范 (snake_case, 正确前缀)
+>
+> **显式依赖原则**:
+> *   Feature 必须通过 `domain` 字段声明归属 (product.yaml 不包含 features 列表)
+> *   Feature 间依赖必须通过 `depends_on` 字段显式声明
+> *   Component 间依赖必须通过 `dependencies` 字段显式声明
+
+### 0.6 STRICT TECH STACK (技术栈铁律)
+
+**触发**: 编写代码或引入依赖时
+
+> *   Python 3.10+ (Type Hints Required)
+> *   **CLI**: `typer` + `rich`
+> *   **Data**: `pydantic` v2 + `sqlmodel` + `pyyaml`
+> *   **Path**: `pathlib.Path` (**Strictly NO `os.path`**)
+> *   **Env**: `uv`
+
+### 0.7 VALIDATE ALWAYS (持续验证)
+
+**触发**: 更新 PRD 或 更新/新增任何 YAML 文件后
+
+> **必须运行 `uv run devspec monitor`** 校验格式和一致性。
+> *   确保所有 YAML 文件符合 Schema。
+> *   确保 PRD 和 YAML 保持一致。
+> *   **不要等到最后才验证，立刻验证。**
 
 ---
 
-## 1. 核心法则 (The Prime Directives)
-
-1.  **Understanding First (理解优先)**:
-    收到需求后，先确保理解需求本身，用自己的话复述，获得用户确认后再进行分析和分解。
-
-2.  **Exhaustiveness Check (穷尽性检查)**:
-    在决定新增 Feature 或 Component 前，必须证明现有节点无法满足需求。"证明行不通，才能新增"。
-
-3.  **Soft Vision Boundary (软边界策略)**:
-    Vision 是可协商的边界，不是硬性拒绝条件。如果需求超出 Vision，询问用户是否要扩展 Vision。
-
-4.  **Spec-Code Consistency (Spec-代码一致性)**:
-    代码是 Spec 的投影，Spec 是代码的真理。新增代码必须同步创建对应的 Component YAML。
-
-5.  **Strict Tech Stack (技术栈铁律)**:
-    *   Python 3.10+ (Type Hints Required)
-    *   **CLI**: `typer` + `rich`
-    *   **Data**: `pydantic` v2 + `sqlmodel` + `pyyaml`
-    *   **Path**: `pathlib.Path` (**Strictly NO `os.path`**)
-    *   **Env**: `uv`
-
-6.  **Explicit Dependencies (显式依赖)**:
-    *   Feature 必须通过 `domain` 字段声明归属 (因为 product.yaml 不包含 features 列表)
-    *   Feature 间依赖必须通过 `depends_on` 字段显式声明，禁止隐含在代码中
-    *   Component 间依赖必须通过 `dependencies` 字段显式声明
-
----
-
-## 2. 上下文按需加载策略 (Context Loading Strategy)
+## 1. 上下文按需加载策略 (Context Loading Strategy)
 
 **原则**: 最小化加载，渐进式深入，按需获取。
 
-### 2.1 Phase 1 加载 (理解需求)
+### 1.1 Phase 1 加载 (理解需求)
 ```
 仅加载: product.yaml (vision, description)
 目的: 理解产品是什么，为复述需求提供背景
 ```
 
-### 2.2 Phase 2 加载 (定位影响)
+### 1.2 Phase 2 加载 (定位影响)
 ```
 加载: product.yaml (domains 概要)
 按需加载: feat_*.yaml (仅涉及 Domain 的 Features)
 目的: 判断需求涉及哪些 Domain 和 Feature
 ```
 
-### 2.3 Phase 3 加载 (评估变更)
+### 1.3 Phase 3 加载 (评估变更)
 ```
 按需加载: comp_*.yaml (仅涉及 Feature 的 Components)
 目的: Exhaustiveness Check 和变更评估
 ```
 
-### 2.4 Phase 4 加载 (生成计划)
+### 1.4 Phase 4 加载 (生成计划)
 ```
 按需加载: 依赖关系图
 目的: 确定执行顺序
@@ -84,7 +102,7 @@
 
 ---
 
-## 3. 需求分析对话流程 (Requirement Analysis Dialogue Flow)
+## 2. 需求分析对话流程 (Requirement Analysis Dialogue Flow)
 
 ### Phase 1: Understanding (理解需求) - 需要确认
 
@@ -105,7 +123,7 @@
 2.1 加载 Domain 概要 (product.yaml domains)
 2.2 判断需求涉及哪些 Domain
 2.3 如果涉及多 Domain，说明跨域影响
-2.4 加载相关 Domain 的现有 Feature 列表
+2.4 按 domain 字段筛选相关 Domain 的现有 Feature (从 feat_*.yaml 文件中读取)
 2.5 判断是新增 Feature 还是修改现有 Feature
 
 输出: 影响范围分析
@@ -180,9 +198,9 @@
 
 ---
 
-## 4. Exhaustiveness Check 记录格式
+## 3. Exhaustiveness Check 记录格式
 
-在分析报告中必须包含穷尽性检查记录:
+当需要向用户确认决策时，使用以下格式记录穷尽性检查结果（内部评估时无需输出）:
 
 ```yaml
 exhaustiveness_check:
@@ -201,7 +219,7 @@ exhaustiveness_check:
 
 ---
 
-## 5. 三种需求类型处理路径
+## 4. 三种需求类型处理路径
 
 ```
 用户需求
@@ -223,11 +241,11 @@ exhaustiveness_check:
 
 ---
 
-## 6. YAML 生成规范 (YAML Generation Rules) - CRITICAL
+## 5. YAML 生成规范 (YAML Generation Rules) - CRITICAL
 
 **原则**: PRD 先行，YAML 跟随，代码最后。
 
-### 6.1 Feature YAML 生成规范
+### 5.1 Feature YAML 生成规范
 
 **触发条件**: 分支 A (新增 Feature) 通过 Exhaustiveness Check 后
 
@@ -290,7 +308,7 @@ workflow:
     output: "{输出描述}"
 ```
 
-### 6.2 Component YAML 生成规范
+### 5.2 Component YAML 生成规范
 
 **触发条件**:
 - 新增 Feature 后需要实现
@@ -391,7 +409,7 @@ design:
 
 ---
 
-## 7. 代码编写规范 (Coding Phase)
+## 6. 代码编写规范 (Coding Phase)
 
 当进入执行阶段后:
 
@@ -403,11 +421,11 @@ design:
 
 ---
 
-## 8. 知识注册 (Register) - CRITICAL
+## 7. 知识注册 (Register) - CRITICAL
 
 **这是最容易被遗忘的步骤。每次代码变更后必须检查。**
 
-### 8.1 新增 Feature 时的注册清单
+### 7.1 新增 Feature 时的注册清单
 
 ```
 □ PRD.md 中已添加 Feature Section (带 <!-- id: feat_xxx --> anchor)
@@ -416,7 +434,7 @@ design:
 □ product.yaml 中 domain 存在且 ID 匹配
 ```
 
-### 8.2 新增 Component 时的注册清单
+### 7.2 新增 Component 时的注册清单
 
 ```
 □ 父 Feature YAML 存在
@@ -427,7 +445,7 @@ design:
 □ 代码文件路径与 file_path 一致
 ```
 
-### 8.3 修改代码时的注册清单
+### 7.3 修改代码时的注册清单
 
 ```
 □ 如果修改了公开 API → 更新 Component YAML 的 design.api
@@ -437,22 +455,54 @@ design:
 
 ---
 
-## 9. 可用工具 (Tools)
+## 8. 能力注册 (Capability Registry)
 
-```bash
-# 运行一致性监控
-uv run devspec monitor
+**自举演进规则**: 当项目实现了新能力后，必须在此注册，将"需求描述"升级为"操作指令"。
 
-# 同步图谱到数据库 (实现后可用)
-uv run devspec sync
+### 状态说明
 
-# 查看产品结构树 (实现后可用)
-uv run devspec tree
-```
+| 状态 | 含义 |
+|:---|:---|
+| ⏳ 手动 | 需要 AI 手动执行文件操作 |
+| ✅ 自动 | 可通过 CLI 命令执行 |
+| 🔜 待实现 | 功能尚未开发 |
+
+### 8.1 需求分析阶段能力
+
+| 能力 | 状态 | 操作指令 |
+|:---|:---|:---|
+| 加载 Product Vision | ⏳ 手动 | `Read .specgraph/product.yaml` (读取 vision, description 字段) |
+| 加载 Domain 概要 | ⏳ 手动 | `Read .specgraph/product.yaml` (读取 domains 字段) |
+| 筛选 Domain 的 Features | ⏳ 手动 | `Glob .specgraph/features/feat_*.yaml` → 逐个读取 → 按 `domain` 字段过滤 |
+| 加载 Feature 的 Components | ⏳ 手动 | 读取 `feat_*.yaml` 的 `realized_by` 字段 → `Read .specgraph/components/comp_*.yaml` |
+| 查询节点关系图 | 🔜 待实现 | `uv run devspec query <node_id>` (待 feat_specgraph_database 完成) |
+
+### 8.2 YAML 生成阶段能力
+
+| 能力 | 状态 | 操作指令 |
+|:---|:---|:---|
+| 创建 Feature YAML | ⏳ 手动 | `Write .specgraph/features/feat_{name}.yaml` (使用 Section 5.1 模板) |
+| 创建 Component YAML | ⏳ 手动 | `Write .specgraph/components/comp_{name}.yaml` (使用 Section 5.2 模板) |
+| 验证 YAML 结构 | 🔜 待实现 | `uv run devspec validate` (待 feat_consistency_monitor 增强) |
+
+### 8.3 代码生成阶段能力
+
+| 能力 | 状态 | 操作指令 |
+|:---|:---|:---|
+| 根据 Component 设计生成代码 | ⏳ 手动 | 读取 `comp_*.yaml` 的 `design` 字段 → 按 `api` 和 `logic` 编写代码 |
+| 同步图谱到数据库 | 🔜 待实现 | `uv run devspec sync` (待 feat_specgraph_database 完成) |
+
+### 8.4 质量保障阶段能力
+
+| 能力 | 状态 | 操作指令 |
+|:---|:---|:---|
+| 运行一致性监控 | ✅ 自动 | `uv run devspec monitor` |
+| PRD-YAML 一致性检查 | ✅ 自动 | `uv run devspec monitor` (包含在 monitor 中) |
+| 查看产品结构树 | 🔜 待实现 | `uv run devspec tree` |
 
 ---
 
-## 10. 交互示例 (Interaction Example)
+## 9. 交互示例 (Interaction Example)
 
 **User**: "我想让 devspec monitor 命令显示更详细的进度信息"
 

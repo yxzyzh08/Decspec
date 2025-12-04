@@ -1,0 +1,157 @@
+# Design: SpecGraph Database Schema Design Decisions
+# Part of Core Engine (L0: dom_core)
+
+id: des_specgraph_schema
+type: design
+name: "SpecGraph Database Schema"
+domain: dom_core
+source_anchor: "PRD.md#specgraph_database_schema"
+intent: "Document the design decisions behind the SpecGraph database schema."
+
+# =============================================================================
+# 设计决策 (Design Decisions)
+# =============================================================================
+
+design_decisions:
+
+  # ---------------------------------------------------------------------------
+  # 1. 三表架构
+  # ---------------------------------------------------------------------------
+  - decision: "Use three tables: nodes, edges, domain_apis"
+    reason: |
+      分离关注点，遵循图数据库的经典模式：
+      - nodes: 存储所有实体（Product, Domain, Feature, Component, Design, Substrate）
+      - edges: 存储实体间关系（contains, owns, depends_on, realized_by 等）
+      - domain_apis: 存储跨域契约，支持 Domain 间的显式依赖声明
+    alternatives_considered:
+      - name: "单表 JSON 文档存储"
+        rejected_reason: "无法高效查询关系，难以实现图遍历"
+      - name: "每种节点类型一张表"
+        rejected_reason: "表数量膨胀，跨类型查询复杂"
+      - name: "使用图数据库 (Neo4j)"
+        rejected_reason: "引入额外依赖，不符合轻量级原则"
+
+  # ---------------------------------------------------------------------------
+  # 2. 统一节点表
+  # ---------------------------------------------------------------------------
+  - decision: "Store all node types in a single 'nodes' table"
+    reason: |
+      所有节点共享相同的核心属性（id, name, description, source_file 等），
+      通过 type 字段区分。这样做的好处：
+      - 简化图遍历查询（不需要 UNION 多张表）
+      - 统一的 CRUD 操作
+      - 便于扩展新节点类型
+    tradeoff: "部分字段对某些类型无意义（如 file_path 仅对 Component 有用）"
+
+  # ---------------------------------------------------------------------------
+  # 3. ID 前缀命名规范
+  # ---------------------------------------------------------------------------
+  - decision: "Use ID prefix for node type detection (feat_, comp_, dom_, etc.)"
+    reason: |
+      - 避免在每个 YAML 中强制 type 字段
+      - ID 本身携带语义，一目了然
+      - 便于人类阅读和调试
+      - 支持从 ID 反推类型，减少数据冗余
+    prefix_mapping:
+      prod_: product
+      dom_: domain
+      feat_: feature
+      comp_: component
+      des_: design
+      sub_: substrate
+
+  # ---------------------------------------------------------------------------
+  # 4. Content Hash 增量同步
+  # ---------------------------------------------------------------------------
+  - decision: "Use SHA256 content_hash for change detection"
+    reason: |
+      - 避免逐字段比较，O(1) 判断文件是否变化
+      - 支持快速增量同步，只处理变化的文件
+      - 与 Git 的 blob hash 理念一致
+    implementation: "hashlib.sha256(yaml_content.encode()).hexdigest()"
+
+  # ---------------------------------------------------------------------------
+  # 5. 边表设计
+  # ---------------------------------------------------------------------------
+  - decision: "Use (source_id, target_id, relation) as logical unique key"
+    reason: |
+      - 同一对节点间可能存在多种关系（如 A depends_on B 且 A references B）
+      - 不使用外键约束，因为节点可能被延迟创建或删除
+      - 软删除策略：删除节点时级联删除相关边
+    relation_types:
+      - contains: "Product -> Domain (层级包含)"
+      - owns: "Domain -> Feature (领域所有权)"
+      - depends_on: "Feature -> Feature, Component -> Component (显式依赖)"
+      - realized_by: "Feature -> Component (实现关系)"
+      - binds_to: "Component -> CodeFile (代码绑定)"
+      - exports: "Domain -> DomainAPI (API 导出)"
+      - consumes: "Feature -> DomainAPI (API 消费)"
+      - references: "Design/Substrate 交叉引用"
+
+  # ---------------------------------------------------------------------------
+  # 6. Domain API 独立表
+  # ---------------------------------------------------------------------------
+  - decision: "Create separate domain_apis table instead of storing in edges"
+    reason: |
+      Domain API 是一等公民，需要存储丰富的元数据：
+      - api_name: 函数名
+      - signature: 完整签名
+      - description: 文档说明
+      这些信息无法优雅地塞进 edge 的 metadata 字段。
+      独立表便于：
+      - 快速查询某 Domain 导出的所有 API
+      - 校验跨域调用的合法性
+      - 生成 API 文档
+
+  # ---------------------------------------------------------------------------
+  # 7. 存储原始 YAML
+  # ---------------------------------------------------------------------------
+  - decision: "Store raw_yaml in nodes table"
+    reason: |
+      - 支持从数据库重建完整上下文，无需回读文件
+      - 便于 AI 消费：一次查询获取所有信息
+      - 支持 diff 和审计：可以比较历史版本
+    tradeoff: "增加存储空间，但对于规范文件（通常 <10KB）可接受"
+
+  # ---------------------------------------------------------------------------
+  # 8. 索引策略
+  # ---------------------------------------------------------------------------
+  - decision: "Create indexes on frequently queried columns"
+    reason: "优化常见查询模式"
+    indexes:
+      - table: nodes
+        columns: [type]
+        purpose: "按类型筛选节点 (get_all_features, get_all_components)"
+      - table: nodes
+        columns: [content_hash]
+        purpose: "增量同步时快速查找"
+      - table: edges
+        columns: [source_id]
+        purpose: "查询子节点 (get_children)"
+      - table: edges
+        columns: [target_id]
+        purpose: "查询父节点 (get_parents)"
+      - table: edges
+        columns: [relation]
+        purpose: "按关系类型筛选"
+
+# =============================================================================
+# 物理 Schema (供参考，实际由 SQLModel 生成)
+# =============================================================================
+
+physical_schema:
+  note: "此处仅供参考，实际 schema 由 comp_graph_database.yaml 中的 SQLModel 定义生成"
+
+  tables:
+    nodes:
+      columns: [id, type, name, description, source_file, source_anchor, intent, file_path, content_hash, raw_yaml, created_at, updated_at]
+      primary_key: id
+
+    edges:
+      columns: [id, source_id, target_id, relation, edge_metadata, created_at]
+      primary_key: id
+      note: "edge_metadata 字段原名 metadata，因 SQLAlchemy 保留字而重命名"
+
+    domain_apis:
+      columns: [id, domain_id, api_name, signature, description]
+      primary_key: id

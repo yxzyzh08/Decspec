@@ -5,16 +5,69 @@
 id: feat_consistency_monitor
 domain: dom_core
 source_anchor: "PRD.md#feat_consistency_monitor"
-intent: "Monitor and report the synchronization status between PRD (Intent) and SpecGraph (Structure) using a layered dashboard structure."
+intent: "监控 PRD-YAML 一致性，验证 YAML 文件格式合规性，生成分层状态报告 (Layered Dashboard)。"
 
 user_stories:
-  - "As a user, I want a 'Layered Dashboard' that shows progress at multiple dimensions: Spec Sync, Feature Assignment, and Overall."
+  - "As a user, I want a 'Layered Dashboard' that shows progress at multiple dimensions: Spec Sync, Feature Assignment, Schema Compliance, and Overall."
   - "As a user, I want separate tables for Domain/Design, Features, and Components to understand status at each architectural level."
   - "As a user, I want Features table to show both Spec Status and Assignment Status (whether Components are assigned)."
   - "As a user, I want Components table to show which Feature they belong to for traceability."
   - "As a user, I want accurate progress calculation: Overall = Spec Sync (40%) + Feature Assignment (60%)."
+  - "As a user, I want to validate all YAML files against sub_meta_schema.yaml to ensure format compliance."
+  - "As a user, I want to see which YAML files have missing required fields or invalid references."
+
+# 核心功能
+core_functions:
+  - name: "PRD-YAML Consistency"
+    desc: "检查 PRD 中定义的节点是否在 YAML 中存在对应文件"
+  - name: "YAML Schema Validation"
+    desc: "验证所有 YAML 文件是否符合 sub_meta_schema.yaml 定义的格式规范"
+  - name: "Layered Dashboard"
+    desc: "生成多维度进度报告"
+
+# YAML Schema 验证规则
+yaml_validation_rules:
+  product:
+    required_fields: [id, name, version, description, domains]
+    id_pattern: "prod_{name}"
+  feature:
+    required_fields: [id, domain, source_anchor, intent]
+    id_pattern: "feat_{snake_case_name}"
+    reference_check: "domain must exist in product.yaml"
+  component:
+    required_fields: [id, type, desc, file_path, design]
+    id_pattern: "comp_{snake_case_name}"
+    design_required_fields: [api, logic]
+  design:
+    required_fields: [id, type, name, intent]
+    id_pattern: "des_{snake_case_name}"
+    type_value: "design"
+  substrate:
+    required_fields: [id, type, name]
+    id_pattern: "sub_{snake_case_name}"
+    type_value: "substrate"
+  excluded_files:
+    - "sub_meta_schema.yaml"  # 规则定义本身不被验证
+
+workflow:
+  - step: 1
+    action: "扫描 .specgraph 目录下所有 YAML 文件"
+    output: "YAML 文件列表 (排除 .runtime 和 sub_meta_schema.yaml)"
+  - step: 2
+    action: "根据文件路径和 ID 前缀判断节点类型"
+    output: "分类后的节点列表"
+  - step: 3
+    action: "对每个 YAML 文件执行 Schema 验证"
+    output: "验证结果列表 (errors, warnings)"
+  - step: 4
+    action: "执行 PRD-YAML 一致性检查"
+    output: "PRD 锚点与 YAML 文件的映射状态"
+  - step: 5
+    action: "生成 Layered Dashboard"
+    output: "多维度进度报告"
 
 realized_by:
   - comp_consistency_monitor
   - comp_markdown_parser
   - comp_spec_indexer
+  - comp_yaml_schema_validator

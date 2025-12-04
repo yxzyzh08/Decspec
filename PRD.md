@@ -71,6 +71,20 @@
 *   ✅ **包含**: 伪代码逻辑、关键常量、输入输出参数定义、输出文件格式。
 *   ❌ **不包含**: 具体实现代码、临时变量、内部私有函数细节。
 
+**YAML 格式规范 (YAML Schema Reference)**:
+
+所有 YAML 文件的完整格式定义位于 `.specgraph/substrate/sub_meta_schema.yaml`，包括：
+
+| 节点类型 | 路径模式 | 说明 |
+| :--- | :--- | :--- |
+| **Product** | `.specgraph/product.yaml` | 产品根节点，定义愿景和领域概要 |
+| **Feature** | `.specgraph/features/feat_{name}.yaml` | 功能节点，定义用户价值单元 |
+| **Component** | `.specgraph/components/comp_{name}.yaml` | 组件节点，定义代码详细设计 |
+| **Design** | `.specgraph/design/des_{name}.yaml` | 设计节点，记录设计决策 (Why & What) |
+| **Substrate** | `.specgraph/substrate/sub_{name}.yaml` | 基质节点，定义执行约束 (How & Constraints) |
+
+**AI 必须在创建/修改 YAML 文件前加载 `sub_meta_schema.yaml` 以确保格式正确。**
+
 ### 2.4 Bootstrapping Strategy <!-- id: des_bootstrap_strategy -->
 
 本项目采用极致的 **"Spec-First"** 自举策略。我们不依靠临时脚本启动，而是依靠完备的规范。
@@ -162,10 +176,24 @@ SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质
 
 ### 3.2 Feature: Consistency Monitor <!-- id: feat_consistency_monitor -->
 
-监控 PRD (Markdown) 与 Spec (YAML) 的一致性，生成分层状态报告 (Layered Dashboard)。
+监控 PRD (Markdown) 与 Spec (YAML) 的一致性，验证 YAML 文件格式合规性，生成分层状态报告 (Layered Dashboard)。
+
+**Core Functions (核心功能)**:
+1.  **PRD-YAML Consistency (PRD-YAML 一致性)**: 检查 PRD 中定义的节点是否在 YAML 中存在对应文件。
+2.  **YAML Schema Validation (YAML 格式验证)**: 验证所有 YAML 文件是否符合 `sub_meta_schema.yaml` 定义的格式规范。
+3.  **Layered Dashboard (分层仪表板)**: 生成多维度进度报告。
+
+**YAML Schema Validation (YAML 格式验证)**:
+*   验证 Product YAML: 必填字段 (id, name, version, description, domains)。
+*   验证 Feature YAML: 必填字段 (id, domain, source_anchor, intent)，domain 引用有效性。
+*   验证 Component YAML: 必填字段 (id, type, desc, file_path, design)，design 内部结构。
+*   验证 Design YAML: 必填字段 (id, type, name, intent)。
+*   验证 Substrate YAML: 必填字段 (id, type, name)。
+*   排除 `sub_meta_schema.yaml` 自身 (它是规则定义，不是被验证对象)。
 
 **Dashboard Structure (分层仪表板)**:
-*   **Progress Overview**: 多维度进度统计 (Spec Sync + Feature Assignment + Overall)。
+*   **Progress Overview**: 多维度进度统计 (Spec Sync + Feature Assignment + Schema Compliance + Overall)。
+*   **Schema Validation Table**: YAML 文件格式合规状态 (Valid/Invalid/Warnings)。
 *   **System Design Table**: Domain 与 Design 节点的 Spec 同步状态。
 *   **Features Table**: Feature 节点的 Spec 同步 + Component 分配状态。
 *   **Components Table**: Component 节点的 Spec 同步状态。
@@ -174,6 +202,7 @@ SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质
 *   **Core Logic** <!-- id: comp_consistency_monitor -->: 核心比对逻辑与分层统计实现。
 *   **Spec Indexer** <!-- id: comp_spec_indexer -->: 索引 SpecGraph 节点。
 *   **Markdown Parser** <!-- id: comp_markdown_parser -->: 解析 PRD 锚点。
+*   **YAML Schema Validator** <!-- id: comp_yaml_schema_validator -->: 验证 YAML 文件是否符合 sub_meta_schema.yaml 定义。
 
 ### 3.3 Feature: SpecGraph Engine <!-- id: feat_specgraph_engine -->
 

@@ -1,0 +1,70 @@
+# Component Definition: CLI Context Command
+# Implements: feat_context_assembler
+# Validated against sub_meta_schema.yaml
+
+id: comp_cli_context
+type: module
+desc: "`devspec context` 命令实现，为 AI Agent 输出指定 Phase 的 Markdown 上下文。"
+file_path: "devspec/commands/context.py"
+
+tech_stack:
+  - typer
+  - rich
+
+dependencies:
+  - comp_context_assembler
+  - comp_graph_database
+  - comp_graph_sync
+  - comp_graph_query
+  - comp_cli_app
+
+design:
+  api:
+    - signature: "def context(phase: str, focus: Optional[str] = None) -> None"
+      desc: "输出指定 Phase 的上下文 Markdown"
+      params:
+        - name: "phase"
+          type: "str"
+          desc: "阶段名称: understanding, locating, evaluating, planning, coding"
+        - name: "focus"
+          type: "Optional[str]"
+          desc: "关注的节点 ID (evaluating/planning/coding 阶段必需)"
+      returns:
+        type: "None"
+        desc: "无返回值，直接输出 Markdown 到 stdout"
+
+  logic: |
+    1. context(phase, focus):
+       1.1 初始化 GraphDatabase (使用 .specgraph/.runtime/specgraph.db)
+       1.2 初始化 GraphSync 并调用 sync_all() 确保数据最新
+       1.3 初始化 GraphQuery
+       1.4 初始化 ContextAssembler(graph_query)
+
+       1.5 验证参数:
+           - 如果 phase 不在 VALID_PHASES 中，打印错误并退出
+           - 如果 phase 需要 focus 但未提供，打印错误并退出
+
+       1.6 调用 assembler.assemble(phase, focus)
+       1.7 直接 print() 输出 Markdown (不使用 Rich 格式化，保持纯文本供 AI 读取)
+
+  constants:
+    VALID_PHASES:
+      - "understanding"
+      - "locating"
+      - "evaluating"
+      - "planning"
+      - "coding"
+    PHASES_REQUIRING_FOCUS:
+      - "evaluating"
+      - "planning"
+      - "coding"
+
+  error_handling:
+    - condition: "无效的 phase 参数"
+      action: "打印错误信息和有效选项列表，退出码 1"
+    - condition: "需要 focus 但未提供"
+      action: "打印错误信息，提示需要 --focus 参数，退出码 1"
+    - condition: "focus 节点不存在"
+      action: "打印错误信息，建议运行 devspec monitor 查看可用节点，退出码 1"
+    - condition: "数据库同步失败"
+      action: "打印警告，继续尝试使用现有数据"

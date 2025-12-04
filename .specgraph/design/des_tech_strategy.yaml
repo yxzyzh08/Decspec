@@ -1,5 +1,53 @@
 # Design: Technical Strategy
+# Type: Design (Why & What)
+# Purpose: 解释技术选型的设计决策
+
 id: des_tech_strategy
+type: design
+name: "Technical Strategy"
 domain: dom_core
 source_anchor: "PRD.md#des_tech_strategy"
-intent: "Define technical constraints: Python 3.10+, Typer, Rich, Tree-sitter, PyYAML."
+intent: "定义 DevSpec 的技术选型策略，解释为什么选择这些技术栈。"
+
+rationale: |
+  技术选型的核心原则：
+  1. **轻量级**: 避免重量级框架，保持工具的敏捷性。
+  2. **类型安全**: 强制 Type Hints，提高代码可维护性和 AI 可理解性。
+  3. **生态成熟**: 选择社区活跃、文档完善的库。
+  4. **自举友好**: 选择适合 Spec-First 理念的工具链。
+
+decisions:
+  - choice: "Python 3.10+"
+    reason: "Type Hints 语法成熟，match-case 语句支持，广泛的 AI/ML 生态。"
+    alternatives_rejected:
+      - "TypeScript: 前端生态强，但 CLI 工具链不如 Python 成熟"
+      - "Rust: 性能优秀，但开发效率不如 Python"
+
+  - choice: "uv"
+    reason: "极速包管理与环境隔离，Rust 实现的 pip 替代品。"
+    alternatives_rejected:
+      - "poetry: 功能全面但速度较慢"
+      - "pip + venv: 原生但缺乏现代特性"
+
+  - choice: "Typer + Rich"
+    reason: "类型安全的 CLI 构建 + 美观的终端输出，完美组合。"
+    alternatives_rejected:
+      - "Click: 功能类似但不如 Typer 类型安全"
+      - "argparse: 标准库但样板代码多"
+
+  - choice: "SQLModel + SQLite"
+    reason: "Pydantic + SQLAlchemy 融合，类型安全的 ORM。SQLite 零配置，适合单机工具。"
+    alternatives_rejected:
+      - "raw SQLite: 缺乏 ORM 便利性"
+      - "PostgreSQL: 对单机工具过于重量级"
+
+  - choice: "Tree-sitter"
+    reason: "增量解析，支持多语言，适合代码分析场景。"
+    alternatives_rejected:
+      - "正则表达式: 无法处理复杂语法"
+      - "AST 库 (如 ast): 仅支持 Python"
+
+constraints:
+  - "所有代码必须使用 Type Hints"
+  - "路径操作使用 pathlib.Path，禁止 os.path"
+  - "配置格式使用 YAML，禁止 JSON/TOML 作为主格式"

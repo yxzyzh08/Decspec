@@ -1,0 +1,230 @@
+# Component Definition: YAML Schema Validator
+# Implements: feat_consistency_monitor
+# Validated against sub_meta_schema.yaml
+
+id: comp_yaml_schema_validator
+type: module
+desc: "验证 YAML 文件是否符合 sub_meta_schema.yaml 定义的格式规范，支持必填字段检查、ID 格式验证、引用有效性检查。"
+file_path: "devspec/core/yaml_schema_validator.py"
+
+tech_stack:
+  - PyYAML
+  - pathlib
+  - dataclasses
+
+dependencies:
+  - comp_spec_indexer  # 用于获取 YAML 文件列表
+
+design:
+  api:
+    - signature: "class ValidationError"
+      desc: "验证错误信息"
+      fields:
+        - name: "file_path"
+          type: "str"
+          desc: "出错的文件路径"
+        - name: "field"
+          type: "str"
+          desc: "出错的字段名"
+        - name: "message"
+          type: "str"
+          desc: "错误描述"
+        - name: "severity"
+          type: "str"
+          desc: "严重程度: error | warning"
+
+    - signature: "class ValidationResult"
+      desc: "单个文件的验证结果"
+      fields:
+        - name: "file_path"
+          type: "str"
+          desc: "文件路径"
+        - name: "node_type"
+          type: "str"
+          desc: "节点类型 (product, feature, component, design, substrate)"
+        - name: "is_valid"
+          type: "bool"
+          desc: "是否通过验证 (无 error)"
+        - name: "errors"
+          type: "List[ValidationError]"
+          desc: "错误列表"
+        - name: "warnings"
+          type: "List[ValidationError]"
+          desc: "警告列表"
+
+    - signature: "class SchemaValidationReport"
+      desc: "完整验证报告"
+      fields:
+        - name: "total_files"
+          type: "int"
+          desc: "验证的文件总数"
+        - name: "valid_count"
+          type: "int"
+          desc: "通过验证的文件数"
+        - name: "invalid_count"
+          type: "int"
+          desc: "未通过验证的文件数"
+        - name: "warning_count"
+          type: "int"
+          desc: "有警告的文件数"
+        - name: "results"
+          type: "List[ValidationResult]"
+          desc: "每个文件的验证结果"
+
+    - signature: "class YAMLSchemaValidator"
+      desc: "YAML Schema 验证器"
+      methods:
+        - signature: "__init__(self, spec_dir: Path) -> None"
+          desc: "初始化验证器"
+          params:
+            - name: "spec_dir"
+              type: "Path"
+              desc: ".specgraph 目录路径"
+
+        - signature: "validate_all(self) -> SchemaValidationReport"
+          desc: "验证所有 YAML 文件"
+          returns:
+            type: "SchemaValidationReport"
+            desc: "完整验证报告"
+
+        - signature: "validate_file(self, file_path: Path) -> ValidationResult"
+          desc: "验证单个 YAML 文件"
+          params:
+            - name: "file_path"
+              type: "Path"
+              desc: "YAML 文件路径"
+          returns:
+            type: "ValidationResult"
+            desc: "验证结果"
+
+        - signature: "_detect_node_type(self, file_path: Path, data: dict) -> str"
+          desc: "检测节点类型"
+          params:
+            - name: "file_path"
+              type: "Path"
+              desc: "文件路径"
+            - name: "data"
+              type: "dict"
+              desc: "YAML 数据"
+          returns:
+            type: "str"
+            desc: "节点类型"
+
+        - signature: "_validate_product(self, data: dict, file_path: Path) -> ValidationResult"
+          desc: "验证 Product YAML"
+
+        - signature: "_validate_feature(self, data: dict, file_path: Path) -> ValidationResult"
+          desc: "验证 Feature YAML"
+
+        - signature: "_validate_component(self, data: dict, file_path: Path) -> ValidationResult"
+          desc: "验证 Component YAML"
+
+        - signature: "_validate_design(self, data: dict, file_path: Path) -> ValidationResult"
+          desc: "验证 Design YAML"
+
+        - signature: "_validate_substrate(self, data: dict, file_path: Path) -> ValidationResult"
+          desc: "验证 Substrate YAML"
+
+  logic: |
+    1. __init__(spec_dir):
+       1.1 保存 spec_dir 路径
+       1.2 加载 product.yaml 获取有效的 domain ID 列表 (用于引用检查)
+       1.3 定义排除文件列表: ["sub_meta_schema.yaml"]
+       1.4 定义排除目录列表: [".runtime", "__pycache__"]
+
+    2. validate_all():
+       2.1 获取所有 YAML 文件: spec_dir.rglob("*.yaml")
+       2.2 过滤排除的文件和目录
+       2.3 对每个文件调用 validate_file()
+       2.4 汇总统计: total, valid, invalid, warnings
+       2.5 返回 SchemaValidationReport
+
+    3. validate_file(file_path):
+       3.1 读取 YAML 文件内容
+       3.2 解析 YAML: yaml.safe_load()
+       3.3 检测节点类型: _detect_node_type()
+       3.4 根据类型调用对应的验证方法:
+           - product -> _validate_product()
+           - feature -> _validate_feature()
+           - component -> _validate_component()
+           - design -> _validate_design()
+           - substrate -> _validate_substrate()
+       3.5 返回 ValidationResult
+
+    4. _detect_node_type(file_path, data):
+       4.1 优先从 ID 前缀判断:
+           - prod_ -> product
+           - feat_ -> feature
+           - comp_ -> component
+           - des_ -> design
+           - sub_ -> substrate
+       4.2 其次从文件路径判断:
+           - /features/ -> feature
+           - /components/ -> component
+           - /design/ -> design
+           - /substrate/ -> substrate
+           - product.yaml -> product
+       4.3 返回 "unknown" 如果无法判断
+
+    5. _validate_product(data, file_path):
+       5.1 检查必填字段: id, name, version, description, domains
+       5.2 检查 id 格式: 必须以 prod_ 开头
+       5.3 检查 domains 是数组且每个 domain 有 id, name, description
+       5.4 返回 ValidationResult
+
+    6. _validate_feature(data, file_path):
+       6.1 检查必填字段: id, domain, source_anchor, intent
+       6.2 检查 id 格式: 必须以 feat_ 开头
+       6.3 检查 domain 引用: 必须在 product.yaml 的 domains 中存在
+       6.4 检查 source_anchor 格式: 应为 "PRD.md#..."
+       6.5 警告: 如果 realized_by 为空 (未分配 Components)
+       6.6 返回 ValidationResult
+
+    7. _validate_component(data, file_path):
+       7.1 检查必填字段: id, type, desc, file_path, design
+       7.2 检查 id 格式: 必须以 comp_ 开头
+       7.3 检查 type 值: 必须为 "module"
+       7.4 检查 design 内部结构:
+           7.4.1 必须有 api 字段
+           7.4.2 必须有 logic 字段
+       7.5 警告: 如果 file_path 指向的文件不存在
+       7.6 返回 ValidationResult
+
+    8. _validate_design(data, file_path):
+       8.1 检查必填字段: id, type, name, intent
+       8.2 检查 id 格式: 必须以 des_ 开头
+       8.3 检查 type 值: 必须为 "design"
+       8.4 返回 ValidationResult
+
+    9. _validate_substrate(data, file_path):
+       9.1 检查必填字段: id, type, name
+       9.2 检查 id 格式: 必须以 sub_ 开头
+       9.3 检查 type 值: 必须为 "substrate"
+       9.4 返回 ValidationResult
+
+  constants:
+    EXCLUDED_FILES:
+      - "sub_meta_schema.yaml"
+    EXCLUDED_DIRS:
+      - ".runtime"
+      - "__pycache__"
+    NODE_TYPE_PREFIXES:
+      prod_: "product"
+      feat_: "feature"
+      comp_: "component"
+      des_: "design"
+      sub_: "substrate"
+    REQUIRED_FIELDS:
+      product: ["id", "name", "version", "description", "domains"]
+      feature: ["id", "domain", "source_anchor", "intent"]
+      component: ["id", "type", "desc", "file_path", "design"]
+      design: ["id", "type", "name", "intent"]
+      substrate: ["id", "type", "name"]
+
+  error_handling:
+    - condition: "YAML 文件解析失败"
+      action: "返回 ValidationResult(is_valid=False, errors=[解析错误信息])"
+    - condition: "文件无法读取"
+      action: "返回 ValidationResult(is_valid=False, errors=[读取错误信息])"
+    - condition: "无法判断节点类型"
+      action: "返回 ValidationResult(is_valid=False, errors=['Unknown node type'])"

@@ -1,5 +1,44 @@
 # Design: Bootstrapping Strategy
+# Type: Design (Why & What)
+# Purpose: 解释自举策略的设计决策
+
 id: des_bootstrap_strategy
+type: design
+name: "Bootstrapping Strategy"
 domain: dom_core
 source_anchor: "PRD.md#des_bootstrap_strategy"
-intent: "Define the 'Spec-First' self-bootstrapping strategy and evolution phases."
+intent: "定义 Spec-First 自举策略和演进阶段，解释为什么采用文档优先的方式启动项目。"
+
+rationale: |
+  为什么采用 Spec-First 自举策略？
+  1. **零代码启动**: 不依赖临时脚本，仅依靠完备的规范启动项目。
+  2. **可追溯性**: 从 Day 0 开始，所有决策都有文档记录。
+  3. **AI 友好**: AI 可以从 Spec 理解项目全貌，无需逆向工程代码。
+  4. **渐进式成熟**: 从人工执行到自动执行的平滑过渡。
+
+phases:
+  - phase: 0
+    name: "Genesis Spec (创世规范)"
+    principle: "Document First (文档优先)"
+    status: "代码量 0，仅存在 .specgraph 目录结构"
+    method:
+      - "定义 Product (product.yaml)"
+      - "定义核心 Domains & Features (L1)"
+      - "设计核心 Components (L2)"
+      - "Human/AI 扮演 Execution Engine，基于 L2 设计生成代码"
+    output: "DevSpec 的 SpecGraph + 初始 Kernel Code"
+
+  - phase: 1
+    name: "Spec-Driven Implementation (规范驱动实现)"
+    status: "拥有基于 Spec 生成的初始 CLI"
+    method:
+      - "修改/细化文档 (L1/L2)"
+      - "运行 DevSpec 工具读取新文档"
+      - "生成/更新功能代码"
+    output: "通过 Spec 验证的完整功能模块"
+
+  - phase: 2
+    name: "The Ouroboros Loop (衔尾蛇闭环)"
+    status: "工具完全成熟"
+    method: "Requirement → Doc Update → Tool Perceives Change → Code Evolves"
+    output: "一个随文档生长的软件生命体"

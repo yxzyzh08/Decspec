@@ -6,19 +6,27 @@ id: comp_cli_app
 type: module
 desc: "Typer 应用主入口，负责命令注册、全局配置和子命令分发。"
 source_anchor: "PRD.md#comp_cli_app"
+file_path: "devspec/main.py"
 
 tech_stack:
   - typer
   - rich
 
-api_contract:
-  - name: "app"
-    type: "typer.Typer"
-    desc: "主 Typer 应用实例，作为 CLI 入口点。"
-  - name: "main()"
-    type: "function"
-    desc: "应用入口函数，由 pyproject.toml 的 [project.scripts] 调用。"
-
-file_path: "devspec/main.py"
-
 dependencies: []
+
+# === 详细设计 (Design) ===
+design:
+  api:
+    - signature: "app: typer.Typer"
+      desc: "主 Typer 应用实例，作为 CLI 入口点"
+    - signature: "def main() -> None"
+      desc: "应用入口函数，由 pyproject.toml 的 [project.scripts] 调用"
+      params: []
+      returns:
+        type: "None"
+        desc: "无返回值"
+
+  logic: |
+    1. 创建 Typer 应用实例 app = typer.Typer()
+    2. 注册子命令 (init, monitor, validate-prd 等)
+    3. main() 函数调用 app() 启动 CLI

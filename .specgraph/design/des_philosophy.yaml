@@ -1,5 +1,31 @@
 # Design: Philosophy
+# Type: Design (Why & What)
+# Purpose: 解释核心理念的设计决策
+
 id: des_philosophy
+type: design
+name: "Core Philosophy"
 domain: dom_core
 source_anchor: "PRD.md#des_philosophy"
-intent: "Define the core philosophy: Spec First, Serial Flow, Conversational, Recursive Evolution."
+intent: "定义 DevSpec 的核心理念，解释为什么选择 Spec First、Serial Flow、Conversational、Recursive Evolution。"
+
+rationale: |
+  DevSpec 的四大核心理念源于对"超级个体"工作模式的深度理解：
+  1. Spec First: 文档是唯一事实来源，代码是 Spec 的投影。这确保了知识的可追溯性。
+  2. Serial Flow: 专注单任务，追求极致流畅的串行吞吐率。避免伪并行带来的上下文切换成本。
+  3. Conversational: 任务沙箱化，平衡 Token 成本与 Context 连贯性。AI 按需加载上下文。
+  4. Recursive Evolution: Dogfooding，工具由工具自身构建。这是 Ouroboros 的核心。
+
+principles:
+  - name: "Spec First"
+    desc: "文档是唯一的事实来源 (Single Source of Truth)。代码是 Spec 的投影。"
+    why: "确保知识可追溯，AI 可以从 Spec 重建完整上下文。"
+  - name: "Serial Flow"
+    desc: "专注单任务。追求极致流畅的串行吞吐率，而非伪并行。"
+    why: "减少上下文切换成本，提高单任务完成质量。"
+  - name: "Conversational"
+    desc: "任务沙箱化，平衡 Token 成本与 Context 连贯性。"
+    why: "AI 按需加载上下文，避免一次性加载全部信息。"
+  - name: "Recursive Evolution"
+    desc: "Dogfooding。工具由工具自身构建。"
+    why: "持续验证工具的有效性，实现 Ouroboros 闭环。"

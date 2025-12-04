@@ -6,6 +6,7 @@ id: comp_cli_monitor
 type: module
 desc: "`devspec monitor` 命令实现，调用 ConsistencyMonitor 执行一致性检查并生成 Dashboard。"
 source_anchor: "PRD.md#comp_cli_monitor"
+file_path: "devspec/commands/monitor.py"
 
 tech_stack:
   - typer

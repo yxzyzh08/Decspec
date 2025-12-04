@@ -26,8 +26,7 @@ workflow:
     action: "Provide query API for Context Assembler"
     output: "Filtered node sets based on query criteria"
 
-depends_on:
-  - feat_specgraph_engine  # Depends on SpecGraph Engine for node definitions
+depends_on: []
 
 realized_by:
   - comp_graph_database

@@ -1,0 +1,110 @@
+# Component Definition: Context Assembler
+# Implements: feat_context_assembler
+# Validated against sub_meta_schema.yaml
+
+id: comp_context_assembler
+type: module
+desc: "根据任务阶段(understanding/locating/evaluating/planning/coding) 和关注节点，利用GraphQuery 组装 Markdown 格式的上下文"
+file_path: "devspec/core/context_assembler.py"
+
+tech_stack:
+  - GraphQuery
+  - Jinja2 (Optional, or f-strings)
+
+dependencies:
+  - comp_graph_query
+
+design:
+  api:
+    - signature: "class ContextAssembler"
+      desc: "上下文组装器"
+      methods:
+        - signature: "__init__(self, graph_query: GraphQuery) -> None"
+          desc: "初始化组装器"
+          params:
+            - name: "graph_query"
+              type: "GraphQuery"
+              desc: "图查询引擎实例"
+
+        - signature: "assemble(self, phase: str, focus_node_id: Optional[str] = None) -> str"
+          desc: "组装上下文"
+          params:
+            - name: "phase"
+              type: "str"
+              desc: "任务阶段: 'understanding', 'locating', 'evaluating', 'planning', 'coding'"
+            - name: "focus_node_id"
+              type: "Optional[str]"
+              desc: "关注的节点 ID (Phase 3/4/Coding 必需)"
+          returns:
+            type: "str"
+            desc: "Markdown 格式的上下文内容"
+
+  logic: |
+    1. assemble(phase, focus_node_id):
+       1.1 根据 phase 分发处理逻辑:
+           - "understanding" -> _assemble_phase_1()
+           - "locating" -> _assemble_phase_2()
+           - "evaluating" -> _assemble_phase_3(focus_node_id)
+           - "planning" -> _assemble_phase_4(focus_node_id)
+           - "coding" -> _assemble_coding_context(focus_node_id)
+       1.2 如果 phase 未知，抛出 ValueError
+
+    2. _assemble_phase_1() - Understanding:
+       2.1 查询 product 节点
+       2.2 返回 Markdown:
+           # Product Context
+           - Name: {product.name}
+           - Vision: {product.vision}
+           - Description: {product.description}
+
+    3. _assemble_phase_2() - Locating:
+       3.1 查询所有 Domain 节点
+       3.2 对每个 Domain，查询其下的 Feature 列表 (GraphQuery.get_features_by_domain)
+       3.3 返回 Markdown:
+           # Domain Overview
+           ## Domain: {dom.name} ({dom.id})
+           - Desc: {dom.description}
+           - Features:
+             - {feat.id}: {feat.intent}
+
+    4. _assemble_phase_3(focus_node_id) - Evaluating:
+       4.1 验证 focus_node_id 是否为 Feature
+       4.2 获取 Feature 完整上下文 (GraphQuery.get_feature_context)
+       4.3 返回 Markdown:
+           # Feature Context: {feat.name}
+           - ID: {feat.id}
+           - Intent: {feat.intent}
+           - User Stories: ...
+           ## Existing Components (for Exhaustiveness Check)
+           - {comp.id}: {comp.desc}
+             - API: ...
+
+    5. _assemble_phase_4(focus_node_id) - Planning:
+       5.1 获取 focus_node_id 的依赖关系 (GraphQuery.get_node_with_relations)
+       5.2 返回 Markdown:
+           # Dependency Graph
+           - Root: {node.id}
+           - Depends On: {dependencies...}
+           - Realized By: {components...}
+
+    6. _assemble_coding_context(focus_node_id) - Coding:
+       6.1 验证 focus_node_id 是否为 Component
+       6.2 获取 Component 完整上下文 (GraphQuery.get_component_context)
+       6.3 加载 Substrate (GraphQuery.get_nodes_by_type("substrate"))
+       6.4 返回 Markdown:
+           # Coding Context
+           ## Component Design
+           {component.raw_yaml}
+           ## Constraints
+           {substrate.content}
+
+  error_handling:
+    - condition: "focus_node_id 为空但 phase 需要 (evaluating/planning/coding)"
+      action: "抛出 ValueError('focus_node_id is required for phase {phase}')"
+    - condition: "focus_node_id 对应节点不存在"
+      action: "抛出 ValueError('Node not found: {focus_node_id}')"
+    - condition: "focus_node_id 类型不匹配 (如 evaluating 阶段传入 Component ID)"
+      action: "抛出 ValueError('Expected {expected_type} node, got {actual_type}')"
+
+  constants:
+    PHASES: ["understanding", "locating", "evaluating", "planning", "coding"]

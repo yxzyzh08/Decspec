@@ -125,7 +125,6 @@ key_confirmations:
     purpose: "确认执行计划是否符合用户预期"
 
 realized_by:
-  - comp_req_understanding   # Phase 1: 理解需求
-  - comp_req_locator         # Phase 2: 定位影响
-  - comp_req_evaluator       # Phase 3: 评估变更
-  - comp_req_planner         # Phase 4: 生成计划
+  - comp_cli_init            # 生成 /devspec-collect-req slash command
+  - comp_context_assembler   # 为各 Phase 提供上下文
+  - comp_cli_context         # devspec context 命令，供 slash command 调用

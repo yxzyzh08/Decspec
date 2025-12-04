@@ -1,5 +1,50 @@
 # Design: Domain Model
+# Type: Design (Why & What)
+# Purpose: 解释领域划分的设计决策
+
 id: des_domain_model
+type: design
+name: "Domain Model"
 domain: dom_core
 source_anchor: "PRD.md#des_domain_model"
-intent: "Define the core domains (Core, CLI, Quality) and their responsibilities."
+intent: "定义 DevSpec 的核心领域划分，解释为什么这样划分职责边界。"
+
+rationale: |
+  为什么将系统划分为四大领域？
+  1. **职责清晰**: 每个 Domain 有明确的职责边界，避免功能耦合。
+  2. **团队扩展**: 未来可按 Domain 分工，独立开发和维护。
+  3. **依赖管理**: 通过 Domain API 实现显式依赖，避免隐式耦合。
+  4. **渐进式开发**: 可按 Domain 优先级逐步实现。
+
+domains:
+  - id: dom_core
+    name: "Core Engine (核心引擎)"
+    metaphor: "系统的'大脑'"
+    responsibility: "负责维护知识图谱、解析代码、管理上下文"
+    why: "这是 DevSpec 的核心能力，所有其他 Domain 都依赖它提供的知识服务。"
+
+  - id: dom_cli
+    name: "CLI Interface (命令行界面)"
+    metaphor: "系统的'嘴巴'和'耳朵'"
+    responsibility: "负责与用户交互"
+    why: "将用户交互逻辑与核心逻辑分离，便于未来扩展其他交互方式（如 Web UI）。"
+
+  - id: dom_quality
+    name: "Quality Assurance (质量保障)"
+    metaphor: "系统的'免疫系统'"
+    responsibility: "负责确保代码与 Spec 的一致性"
+    why: "质量保障是独立关注点，不应与业务逻辑混淆。"
+
+  - id: dom_infra
+    name: "Infrastructure (基础设施)"
+    metaphor: "系统的'血液循环'"
+    responsibility: "提供日志、配置、错误处理等横切能力"
+    why: "基础设施能力被所有 Domain 消费，抽取为独立 Domain 避免重复实现。"
+
+principles:
+  - name: "Bounded Context"
+    desc: "每个 Domain 是一个边界上下文，内部高内聚，外部低耦合。"
+  - name: "Domain API"
+    desc: "Domain 间只能通过导出的 API 交互，不允许直接访问内部实现。"
+  - name: "Dependency Direction"
+    desc: "依赖方向：dom_cli/dom_quality → dom_core → dom_infra。"

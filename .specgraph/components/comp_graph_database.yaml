@@ -65,6 +65,48 @@ design:
             type: "NodeModel | None"
             desc: "Node data or None if not found"
 
+        - signature: "close(self) -> None"
+          desc: "Close the database connection and dispose of the engine."
+
+        - signature: "get_all_nodes(self) -> List[NodeModel]"
+          desc: "Retrieve all nodes from database."
+          returns:
+            type: "List[NodeModel]"
+            desc: "List of all nodes"
+
+        - signature: "get_all_edges(self) -> List[EdgeModel]"
+          desc: "Retrieve all edges from database."
+          returns:
+            type: "List[EdgeModel]"
+            desc: "List of all edges"
+
+        - signature: "upsert_domain_api(self, api: DomainAPIModel) -> None"
+          desc: "Insert or update a domain API."
+          params:
+            - name: "api"
+              type: "DomainAPIModel"
+              desc: "DomainAPI data to upsert"
+
+        - signature: "delete_domain_apis(self, domain_id: str) -> None"
+          desc: "Delete all APIs for a domain."
+          params:
+            - name: "domain_id"
+              type: "str"
+              desc: "Domain ID whose APIs to delete"
+
+        - signature: "get_domain_apis(self, domain_id: str) -> List[DomainAPIModel]"
+          desc: "Get all APIs for a domain."
+          params:
+            - name: "domain_id"
+              type: "str"
+              desc: "Domain ID to query"
+          returns:
+            type: "List[DomainAPIModel]"
+            desc: "List of DomainAPIModel"
+
+        - signature: "clear_all(self) -> None"
+          desc: "Clear all data from the database (nodes, edges, and domain_apis). Used for full synchronization."
+
     - signature: "class NodeModel(SQLModel, table=True)"
       desc: "SQLModel for nodes table"
       fields:
@@ -120,9 +162,9 @@ design:
         - name: "relation"
           type: "str"
           desc: "Relation type (contains, owns, depends_on, realized_by, etc.)"
-        - name: "metadata"
+        - name: "edge_metadata"
           type: "str | None"
-          desc: "JSON-encoded metadata"
+          desc: "JSON-encoded metadata (renamed from 'metadata' to avoid SQLAlchemy reserved name)"
         - name: "created_at"
           type: "datetime"
           desc: "Creation timestamp"
@@ -178,6 +220,37 @@ design:
     7. get_node(node_id):
        7.1 session.get(NodeModel, node_id)
        7.2 返回节点或 None
+
+    8. close():
+       8.1 调用 engine.dispose() 释放连接
+
+    9. get_all_nodes():
+       9.1 SELECT * FROM nodes
+       9.2 返回 List[NodeModel]
+
+    10. get_all_edges():
+        10.1 SELECT * FROM edges
+        10.2 返回 List[EdgeModel]
+
+    11. upsert_domain_api(api):
+        11.1 查询是否存在相同 (domain_id, api_name) 的 API
+        11.2 如果存在，更新 signature 和 description
+        11.3 如果不存在，插入新 API
+        11.4 session.commit()
+
+    12. delete_domain_apis(domain_id):
+        12.1 DELETE FROM domain_apis WHERE domain_id = domain_id
+        12.2 session.commit()
+
+    13. get_domain_apis(domain_id):
+        13.1 SELECT * FROM domain_apis WHERE domain_id = domain_id
+        13.2 返回 List[DomainAPIModel]
+
+    14. clear_all():
+        14.1 DELETE FROM edges
+        14.2 DELETE FROM domain_apis
+        14.3 DELETE FROM nodes
+        14.4 session.commit()
 
   constants:
     DEFAULT_DB_PATH: ".specgraph/.runtime/specgraph.db"
