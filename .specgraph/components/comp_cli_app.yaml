@@ -14,13 +14,15 @@ tech_stack:
 
 dependencies:
   - comp_cli_debug_logger  # For CLI debug mode support
-  - comp_config_manager     # For configuration and debug mode detection
+  - comp_config_manager    # For configuration and debug mode detection
+  - comp_logger_factory    # For global logging configuration
 
 # === 详细设计 (Design) ===
 design:
   api:
     - signature: "app: typer.Typer"
       desc: "主 Typer 应用实例，作为 CLI 入口点"
+
     - signature: "def main() -> None"
       desc: "应用入口函数，由 pyproject.toml 的 [project.scripts] 调用"
       params: []
@@ -28,17 +30,66 @@ design:
         type: "None"
         desc: "无返回值"
 
+    - signature: "@app.callback() def global_options(ctx: typer.Context, debug: bool) -> None"
+      desc: "全局选项回调，处理 --debug flag"
+      params:
+        - name: "ctx"
+          type: "typer.Context"
+          desc: "Typer context 对象"
+        - name: "debug"
+          type: "bool"
+          desc: "--debug flag 值（默认 False）"
+
   logic: |
-    1. 创建 Typer 应用实例 app = typer.Typer()
-    2. 添加全局 --debug 选项 (通过 Typer callback)
-    3. 应用启动时加载配置:
-       3.1 调用 load_env_file() 加载 .env 文件 (如果存在)
-       3.2 初始化 ConfigManager
-    4. 判断是否启用 Debug 模式:
-       4.1 调用 get_debug_mode(cli_flag=--debug 参数值)
-       4.2 优先级: CLI 参数 > .env 文件 > 默认 False
-    5. 如果 Debug 模式启用:
-       5.1 初始化 CLIDebugLogger
-       5.2 为所有注册的命令添加 debug_command 装饰器
-    6. 注册子命令 (init, monitor, validate-prd, sync 等)
-    7. main() 函数调用 app() 启动 CLI
+    模块级初始化:
+    1. 创建 Typer 应用实例: app = typer.Typer(name="devspec", ...)
+
+    2. 定义全局选项回调 (在命令执行前调用):
+       @app.callback()
+       def global_options(ctx, debug):
+           2.1 如果 debug=True: 设置 os.environ['DEBUG'] = 'true'
+           2.2 将 debug flag 注入到环境变量，供 get_debug_mode() 使用
+
+    3. 注册子命令 (动态包装方式):
+       3.1 导入所有命令函数: init, monitor, validate_prd, context, sync
+       3.2 使用 debug_command 装饰器动态包装:
+           app.command(name="init")(debug_command(init))
+           app.command(name="monitor")(debug_command(monitor))
+           app.command(name="validate-prd")(debug_command(validate_prd))
+           app.command(name="context")(debug_command(context))
+           app.command(name="sync")(debug_command(sync))
+       3.3 为保留命令 (tree, generate) 也添加装饰器
+
+    4. main() 函数入口 (进程启动时执行一次):
+       4.1 调用 load_env_file() 加载 .env 文件 (如果存在)
+       4.2 调用 configure_logging() 配置全局日志:
+           - level: 从 get_config('logging.level', 'INFO') 获取
+           - format: 从 get_config('logging.format', 'rich') 获取
+       4.3 调用 app() 启动 Typer 应用
+
+    执行流程:
+    - 用户运行: devspec --debug monitor
+    - main() 执行: 加载配置、配置日志 (只一次)
+    - global_options() 执行: 解析 --debug flag，注入环境变量
+    - @debug_command 装饰器执行: 检查 get_debug_mode()，决定是否记录日志
+    - monitor 命令执行: 执行实际业务逻辑
+
+  notes: |
+    Design Decisions (CLI Integration):
+    - Dynamic Decorator Wrapping: Use app.command()(debug_command(func)) instead of @debug_command on each function.
+      Reason: Centralized management in main.py, no need to modify individual command modules.
+
+    - One-Time Initialization in main(): load_env_file() and configure_logging() are called in main() before app().
+      Reason: These are process-level configurations, should only run once, not on every command.
+
+    - @app.callback() for --debug Flag: The callback only handles CLI flag parsing and environment variable injection.
+      Reason: Separates concerns - callback for argument parsing, main() for initialization.
+
+    - Debug Mode Detection: The @debug_command decorator calls get_debug_mode() which checks:
+      1. CLI flag (--debug) injected by callback → os.environ['DEBUG']
+      2. .env file (DEBUG=true)
+      3. System env var (DEVSPEC_DEBUG)
+      Priority: CLI > System Env > .env > Default (False)
+
+    - No ConfigManager Singleton: Config is loaded once via load_env_file() and accessed via get_config().
+      Consistent with comp_config_manager's module-level design.

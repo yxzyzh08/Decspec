@@ -9,7 +9,8 @@ file_path: "devspec/infra/cli_debug_logger.py"
 tech_stack:
   - "logging (Python stdlib)"
   - "functools (for decorators)"
-  - "datetime"
+  - "time (for duration measurement)"
+  - "datetime (for execution ID generation)"
   - "pathlib"
 
 dependencies:
@@ -52,7 +53,7 @@ design:
           desc: "执行 ID (由 _log_command_start 返回)"
         - name: "result"
           type: "Any"
-          desc: "命令返回结果"
+          desc: "命令返回结果（会被转为字符串并截断为最多 500 字符用于日志输出）"
         - name: "duration"
           type: "float"
           desc: "执行耗时（秒）"
