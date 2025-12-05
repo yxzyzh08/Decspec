@@ -7,13 +7,13 @@ type: design
 name: "Core Philosophy"
 domain: dom_core
 source_anchor: "PRD.md#des_philosophy"
-intent: "定义 DevSpec 的核心理念，解释为什么选择 Spec First、Serial Flow、Conversational、Recursive Evolution。"
+intent: "定义 DevSpec 的核心理念，解释为什么选择 Spec First、Serial Flow、Layered Knowledge、Recursive Evolution。"
 
 rationale: |
   DevSpec 的四大核心理念源于对"超级个体"工作模式的深度理解：
   1. Spec First: 文档是唯一事实来源，代码是 Spec 的投影。这确保了知识的可追溯性。
   2. Serial Flow: 专注单任务，追求极致流畅的串行吞吐率。避免伪并行带来的上下文切换成本。
-  3. Conversational: 任务沙箱化，平衡 Token 成本与 Context 连贯性。AI 按需加载上下文。
+  3. Layered Knowledge: 分层知识架构，从产品概览到代码细节逐层深入。AI 宿主工具可按任务需求选择加载粒度。
   4. Recursive Evolution: Dogfooding，工具由工具自身构建。这是 Ouroboros 的核心。
 
 principles:
@@ -23,9 +23,9 @@ principles:
   - name: "Serial Flow"
     desc: "专注单任务。追求极致流畅的串行吞吐率，而非伪并行。"
     why: "减少上下文切换成本，提高单任务完成质量。"
-  - name: "Conversational"
-    desc: "任务沙箱化，平衡 Token 成本与 Context 连贯性。"
-    why: "AI 按需加载上下文，避免一次性加载全部信息。"
+  - name: "Layered Knowledge"
+    desc: "分层知识架构 (L-1 → L2)，从产品概览到代码细节逐层深入。"
+    why: "DevSpec 作为辅助工具，通过分层结构为 AI 宿主工具 (Claude CLI/Gemini CLI) 提供「从粗到细」的知识粒度，使其可按任务需求选择加载深度。"
   - name: "Recursive Evolution"
     desc: "Dogfooding。工具由工具自身构建。"
     why: "持续验证工具的有效性，实现 Ouroboros 闭环。"

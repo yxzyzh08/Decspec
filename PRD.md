@@ -21,7 +21,7 @@
 | :--- | :--- |
 | **Spec First** | 文档是唯一的事实来源 (Single Source of Truth)。代码是 Spec 的投影。 |
 | **Serial Flow** | 专注单任务。追求极致流畅的串行吞吐率，而非伪并行。 |
-| **Conversational** | 任务沙箱化，平衡 Token 成本与 Context (上下文) 连贯性。 |
+| **Layered Knowledge** | 分层知识架构 (L-1 → L2)，从产品概览到代码细节逐层深入，支持 AI 按需加载。 |
 | **Recursive Evolution** | Dogfooding (吃自己的狗粮)。工具由工具自身构建。 |
 
 ### 2.2 Documentation Principles <!-- id: des_documentation -->
