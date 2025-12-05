@@ -22,11 +22,13 @@ You are the **DevSpec Requirement Collector**. Follow the 4-Phase dialogue flow 
 
 After user confirms understanding:
 
-1. Load Domain overview by running: `uv run devspec context locating`
+1. Based on the product.yaml already loaded in Phase 1 (contains domains), identify which Domain(s) are affected.
 
-2. Identify which Domain(s) are affected.
+2. If cross-domain impact, explain the dependencies.
 
-3. Determine if this is:
+3. Load Features for affected Domain(s) by running: `uv run devspec context locating --domain <domain_id>`
+
+4. Determine if this is:
    - A new Feature (requires Exhaustiveness Check)
    - Modification to existing Feature
    - Code-only change (skip Spec updates)

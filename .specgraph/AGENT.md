@@ -347,8 +347,7 @@ design:
 
 | 能力 | 状态 | 操作指令 |
 |:---|:---|:---|
-| 加载 Product Vision | ⏳ 手动 | `Read .specgraph/product.yaml` (读取 vision, description 字段) |
-| 加载 Domain 概要 | ⏳ 手动 | `Read .specgraph/product.yaml` (读取 domains 字段) |
+| 加载 Product (Vision + Domains) | ⏳ 手动 | `Read .specgraph/product.yaml` (完整文件: vision, description, domains) |
 | 筛选 Domain 的 Features | ⏳ 手动 | `Glob .specgraph/features/feat_*.yaml` → 逐个读取 → 按 `domain` 字段过滤 |
 | 加载 Feature 的 Components | ⏳ 手动 | 读取 `feat_*.yaml` 的 `realized_by` 字段 → `Read .specgraph/components/comp_*.yaml` |
 | 查询节点关系图 | 🔜 待实现 | `uv run devspec query <node_id>` (待 feat_specgraph_database 完成) |

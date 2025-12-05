@@ -274,11 +274,10 @@ Phase 1: Understanding (理解需求)
          ↓ 用户确认
 
 Phase 2: Locating (定位影响)
-├── 2.1 加载 Domain 概要
-├── 2.2 判断需求涉及哪些 Domain
-├── 2.3 如果涉及多 Domain，说明跨域影响
-├── 2.4 加载相关 Domain 的现有 Feature 列表
-└── 2.5 判断是新增 Feature 还是修改现有 Feature
+├── 2.1 判断需求涉及哪些 Domain (基于 Phase 1 已加载的 product.yaml)
+├── 2.2 如果涉及多 Domain，说明跨域影响
+├── 2.3 加载相关 Domain 的现有 Feature 列表
+└── 2.4 判断是新增 Feature 还是修改现有 Feature
          ↓
 
 Phase 3: Evaluating (评估变更)
