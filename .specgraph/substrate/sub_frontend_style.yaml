@@ -1,0 +1,257 @@
+# Substrate Definition: Frontend Style
+# Type: Substrate (How & Constraints)
+# Purpose: AI 编写前端代码时必须遵循的规范约束，适用于所有项目
+
+id: sub_frontend_style
+type: substrate
+name: "Frontend Style"
+domain: dom_frontend
+source_anchor: "PRD.md#sub_frontend_style"
+description: "定义前端编码规范，AI 在编写/审查前端代码时必须加载此文件。适用于 DevSpec 管理的所有项目。"
+
+# ============================================================
+# 组件库结构 (Component Library Structure)
+# ============================================================
+component_library:
+  root_path: "templates/components/"
+  index_file: "_index.yaml"
+  note: "每个项目在自己的 templates/components/ 目录下维护组件库"
+
+  # Spec-First 原则: 组件 = MD文档(Truth) + HTML代码(Projection)
+  principle: |
+    组件由两部分组成:
+    1. Markdown 文档 (.md) - 设计规范，定义组件的用途、参数、样式要求 (Truth)
+    2. HTML 模板 (.html) - 代码实现，必须遵循 MD 文档定义 (Projection)
+
+    开发流程:
+    1. 先注册: devspec frontend register <category> <name> --desc "描述"
+    2. 再设计: 编辑生成的 .md 文档，完善参数和样式规范
+    3. 后编码: 根据 .md 文档编写 .html 模板
+    4. 最后验证: devspec frontend check 确保一致性
+
+  structure: |
+    templates/
+    ├── base.html              # 基础布局模板
+    ├── pages/                 # 页面模板
+    │   ├── home.html
+    │   └── ...
+    └── components/            # 共享组件库
+        ├── _index.yaml        # 组件索引 (自动维护)
+        ├── cards/             # 卡片类组件
+        │   ├── domain.md      # 设计文档 (Truth)
+        │   ├── domain.html    # 代码实现 (Projection)
+        │   └── ...
+        ├── badges/            # 徽章类组件
+        │   ├── status.md
+        │   └── status.html
+        ├── nav/               # 导航类组件
+        │   └── ...
+        ├── display/           # 展示类组件
+        │   └── ...
+        └── forms/             # 表单类组件
+            └── ...
+
+  # 组件状态流转
+  component_status:
+    - status: "registered"
+      desc: "已注册，MD 文档已创建，等待设计完善"
+    - status: "implemented"
+      desc: "已实现，HTML 代码已编写"
+    - status: "verified"
+      desc: "已验证，devspec frontend check 通过"
+
+# ============================================================
+# 组件索引规范 (Component Index Schema)
+# ============================================================
+component_index_schema:
+  file: "_index.yaml"
+  purpose: "记录所有组件的作用、参数、用法，便于查阅和复用"
+
+  required_fields:
+    - field: id
+      format: "comp_{category}_{name}"
+      desc: "组件 ID，如 comp_cards_domain"
+    - field: category
+      format: "string"
+      desc: "组件分类，如 cards, badges, nav"
+    - field: name
+      format: "string"
+      desc: "组件名称，如 domain, status"
+    - field: desc
+      format: "string"
+      desc: "组件功能描述"
+    - field: md_path
+      format: "{category}/{name}.md"
+      desc: "Markdown 设计文档路径 (Truth)"
+    - field: html_path
+      format: "{category}/{name}.html"
+      desc: "HTML 模板路径 (Projection)"
+    - field: status
+      format: "registered | implemented | verified"
+      desc: "组件当前状态"
+
+  optional_fields:
+    - field: params
+      format: "list[ParamObject]"
+      desc: "组件参数列表"
+    - field: example
+      format: "string"
+      desc: "使用示例 (Jinja2 include 语法)"
+    - field: dependencies
+      format: "list[string]"
+      desc: "依赖的其他组件"
+
+  example: |
+    components:
+      - id: comp_cards_domain
+        category: "cards"
+        name: "domain"
+        desc: "Domain 展示卡片，显示名称、描述和 Feature 数量"
+        md_path: "cards/domain.md"
+        html_path: "cards/domain.html"
+        status: "verified"
+        params:
+          - name: domain
+            type: DomainNode
+            desc: "Domain 节点对象"
+          - name: feature_count
+            type: int
+            desc: "该 Domain 下的 Feature 数量"
+        example: |
+          {% include "components/cards/domain.html" with context %}
+
+# ============================================================
+# 命名规范 (Naming Conventions)
+# ============================================================
+naming:
+  files:
+    rule: "snake_case，语义化命名"
+    examples:
+      good: ["domain_card.html", "search_box.html", "code_block.html"]
+      bad: ["DomainCard.html", "card1.html", "temp.html"]
+
+  css_classes:
+    rule: "使用 Tailwind CSS 类，自定义类使用 kebab-case 前缀 ds-"
+    examples:
+      good: ["ds-card", "ds-nav-item", "ds-code-block"]
+      bad: ["myCard", "navItem", "codeBlock"]
+
+  component_ids:
+    rule: "comp_{category}_{name}"
+    examples:
+      good: ["comp_card_domain", "comp_nav_breadcrumb"]
+      bad: ["domain_card", "breadcrumb"]
+
+# ============================================================
+# 样式规范 (Style Conventions)
+# ============================================================
+styles:
+  framework: "Tailwind CSS (via CDN)"
+
+  color_palette:
+    primary: "blue-600"
+    secondary: "gray-600"
+    success: "green-600"
+    warning: "yellow-600"
+    error: "red-600"
+    background: "gray-50"
+    surface: "white"
+    text_primary: "gray-900"
+    text_secondary: "gray-600"
+
+  spacing:
+    rule: "使用 Tailwind 的标准间距单位"
+    common: ["p-4", "m-2", "gap-4", "space-y-4"]
+
+  typography:
+    headings: "font-semibold text-gray-900"
+    body: "text-gray-600"
+    code: "font-mono bg-gray-100 px-1 rounded"
+
+# ============================================================
+# 开发流程 (Development Workflow)
+# ============================================================
+workflow:
+  before_coding:
+    - step: 1
+      action: "加载 sub_frontend_style.yaml"
+      desc: "了解前端编码规范"
+    - step: 2
+      action: "运行 devspec frontend list"
+      desc: "查看现有组件，检查是否有可复用的组件"
+    - step: 3
+      action: "如有合适组件，直接复用"
+      desc: "使用 {% include %} 引入组件"
+
+  creating_new_component:
+    - step: 1
+      action: "确认无法复用现有组件"
+      desc: "必须先完成 devspec frontend list 查阅"
+    - step: 2
+      action: "注册组件"
+      command: "devspec frontend register <category> <name> --desc '描述'"
+      desc: "创建 MD 设计文档，更新索引 (status: registered)"
+    - step: 3
+      action: "完善设计文档"
+      desc: "编辑生成的 .md 文件，定义参数、样式规范"
+    - step: 4
+      action: "编写 HTML 模板"
+      desc: "根据 .md 文档编写 .html 代码，遵循设计规范"
+    - step: 5
+      action: "验证组件"
+      command: "devspec frontend check"
+      desc: "确保 MD 与 HTML 一致 (status: verified)"
+
+  important_rules:
+    - rule: "必须先注册再编码"
+      desc: "不允许直接创建 HTML 文件，必须通过 register 命令先创建 MD 文档"
+    - rule: "MD 文档是 Truth"
+      desc: "HTML 代码必须遵循 MD 文档定义的参数和样式规范"
+    - rule: "修改需同步"
+      desc: "修改组件时，先更新 MD 文档，再修改 HTML 代码"
+
+# ============================================================
+# Jinja2 模板规范 (Jinja2 Template Conventions)
+# ============================================================
+jinja2:
+  include_syntax: |
+    {# 引入组件 #}
+    {% include "components/card/domain_card.html" %}
+
+    {# 带参数引入 #}
+    {% with domain=item, feature_count=5 %}
+      {% include "components/card/domain_card.html" %}
+    {% endwith %}
+
+  block_naming:
+    rule: "使用语义化的 block 名称"
+    examples:
+      good: ["{% block content %}", "{% block sidebar %}", "{% block scripts %}"]
+      bad: ["{% block b1 %}", "{% block main %}"]
+
+  comments:
+    rule: "复杂逻辑必须添加注释"
+    format: "{# 注释内容 #}"
+
+# ============================================================
+# htmx 规范 (htmx Conventions)
+# ============================================================
+htmx:
+  usage: "用于动态内容加载，避免整页刷新"
+
+  common_attributes:
+    - attr: "hx-get"
+      desc: "发起 GET 请求"
+    - attr: "hx-target"
+      desc: "指定响应内容的目标元素"
+    - attr: "hx-swap"
+      desc: "指定内容替换方式"
+    - attr: "hx-trigger"
+      desc: "指定触发事件"
+
+  example: |
+    <button hx-get="/api/features/{{ domain.id }}"
+            hx-target="#feature-list"
+            hx-swap="innerHTML">
+      Load Features
+    </button>

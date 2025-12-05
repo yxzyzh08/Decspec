@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}{{ node.name }} - Substrate - SpecGraph Viewer{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-green-500">
+    <div class="flex items-center mb-2">
+      <span class="text-2xl mr-3">📐</span>
+      <h1 class="text-2xl font-bold text-gray-800">{{ node.name }}</h1>
+    </div>
+    <p class="text-gray-500">{{ node.id }}</p>
+    {% if node.description %}
+    <p class="text-gray-700 mt-4">{{ node.description }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Content from YAML -->
+  <div class="space-y-4">
+    {% if content.constraints %}
+    <details open class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Constraints (约束规则)
+      </summary>
+      <div class="px-6 pb-4">
+        <ul class="list-disc list-inside space-y-2 text-gray-700">
+          {% for constraint in content.constraints %}
+          <li>{{ constraint }}</li>
+          {% endfor %}
+        </ul>
+      </div>
+    </details>
+    {% endif %}
+
+    {% if content.validation_rules %}
+    <details open class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Validation Rules (验证规则)
+      </summary>
+      <div class="px-6 pb-4">
+        <div class="space-y-3">
+          {% for rule in content.validation_rules %}
+          <div class="border-l-4 border-green-300 pl-4 py-2">
+            <div class="font-medium text-gray-800">{{ rule.name or rule.rule }}</div>
+            {% if rule.desc %}
+            <div class="text-gray-600">{{ rule.desc }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
+    {% if content.environment %}
+    <details class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Environment (环境配置)
+      </summary>
+      <div class="px-6 pb-4">
+        <pre class="bg-gray-100 p-4 rounded text-sm overflow-auto">{{ content.environment | tojson(indent=2) }}</pre>
+      </div>
+    </details>
+    {% endif %}
+
+    {% if content.core_libraries %}
+    <details class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Core Libraries (核心库)
+      </summary>
+      <div class="px-6 pb-4">
+        <div class="grid gap-3">
+          {% for name, lib in content.core_libraries.items() %}
+          <div class="border-l-4 border-gray-300 pl-4 py-2">
+            <div class="font-medium text-gray-800">{{ name }}</div>
+            {% if lib.desc %}
+            <div class="text-gray-600">{{ lib.desc }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

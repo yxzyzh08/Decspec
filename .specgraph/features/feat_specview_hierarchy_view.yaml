@@ -1,0 +1,84 @@
+# Feature Definition: SpecView Hierarchy View
+# Part of SpecGraph Viewer (L0: dom_specview)
+# Validated against sub_meta_schema.yaml
+
+id: feat_specview_hierarchy_view
+domain: dom_specview
+source_anchor: "PRD.md#feat_specview_hierarchy_view"
+intent: "提供产品层级结构的可视化展示 (Product → Domain → Feature → Component)，使人类用户能够快速理解产品的整体架构。"
+
+user_stories:
+  - "As a human user, I want to see the product's domain structure at a glance."
+  - "As a human user, I want to expand a domain to see its features."
+  - "As a human user, I want to expand a feature to see its components."
+  - "As a human user, I want to click on any node to view its details."
+  - "As a human user, I want to use breadcrumb navigation to jump back to parent nodes."
+  - "As a human user, I want to see Component's API signatures, logic pseudocode, and constants."
+
+workflow:
+  - step: 1
+    action: "User navigates to hierarchy view."
+    output: "Tree structure shows Product at root with collapsible domains."
+  - step: 2
+    action: "User clicks expand icon on a domain."
+    output: "htmx fetches and displays features under that domain."
+  - step: 3
+    action: "User clicks on a feature node."
+    output: "Feature detail panel shows intent, user stories, and realized_by."
+  - step: 4
+    action: "User clicks on a component node."
+    output: "Component detail panel shows desc, file_path, API signatures (design.api), logic pseudocode (design.logic), and constants (design.constants)."
+  - step: 5
+    action: "User clicks breadcrumb link (e.g., 'Domain > Feature > Component')."
+    output: "Navigates to the clicked level, preserving context."
+
+breadcrumb_navigation:
+  format: "Product > {Domain} > {Feature} > {Component}"
+  behavior: "Each segment is clickable, navigates to that level's detail page."
+
+# Component 详情分区 - 可折叠设计防止认知超载 (P0 改进)
+component_detail_sections:
+  - section: "Summary"
+    always_visible: true
+    fields: ["id", "desc", "file_path"]
+    note: "基础信息始终可见，帮助用户快速确认"
+  - section: "Tech Stack"
+    collapsible: true
+    default_state: "collapsed"
+    fields: ["tech_stack", "dependencies"]
+  - section: "API Signatures"
+    collapsible: true
+    default_state: "expanded"  # API 是最常查看的内容
+    source: "design.api"
+    desc: "展示组件的公开接口定义"
+  - section: "Logic"
+    collapsible: true
+    default_state: "collapsed"  # 伪代码可能很长，默认折叠
+    source: "design.logic"
+    desc: "展示伪代码逻辑描述"
+  - section: "Constants"
+    collapsible: true
+    default_state: "collapsed"
+    source: "design.constants"
+    desc: "展示关键常量定义"
+  - section: "Output Files"
+    collapsible: true
+    default_state: "collapsed"
+    source: "design.output_files"
+    desc: "组件生成的输出文件格式"
+    show_if: "design.output_files exists"
+
+design_principles:
+  - name: "Progressive Disclosure"
+    desc: "Start collapsed, load children on demand via htmx."
+  - name: "Visual Hierarchy"
+    desc: "Use indentation and icons to show parent-child relationships."
+  - name: "Contextual Navigation"
+    desc: "Breadcrumb always visible, showing current location in hierarchy."
+
+depends_on:
+  - feat_specview_dashboard_core
+
+realized_by:
+  - comp_specview_routes
+  - comp_specview_templates

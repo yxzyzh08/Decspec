@@ -1,0 +1,39 @@
+_comment: 前端组件索引 (自动生成，请勿手动编辑)
+_note: 使用 devspec frontend register 添加新组件
+components:
+- id: comp_card_domain
+  path: cards/domain.html
+  desc: Domain 卡片组件，展示 Domain 的基本信息和状态
+  params:
+  - name: domain
+    type: DomainNode
+    desc: Domain 节点对象
+  - name: show_features
+    type: bool
+    desc: 是否显示关联的 Features 列表
+  example: '{% include "components/cards/domain.html" %}
+
+    '
+- id: comp_card_feature
+  path: cards/feature.html
+  desc: Feature 卡片组件，展示 Feature 的详情和实现状态
+  params:
+  - name: feature
+    type: FeatureNode
+    desc: Feature 节点对象
+  - name: compact
+    type: bool
+    desc: 是否使用紧凑模式
+  example: '{% include "components/cards/feature.html" %}
+
+    '
+- id: comp_badge_status
+  path: badges/status.html
+  desc: 状态徽章组件，显示同步状态 (Synced/PRD Only/YAML Only)
+  params:
+  - name: status
+    type: str
+    desc: '状态值: synced | prd_only | yaml_only'
+  example: '{% include "components/badges/status.html" %}
+
+    '

@@ -116,10 +116,12 @@
 
 ### 2.5 Domain Model <!-- id: des_domain_model -->
 
-DevSpec 的核心架构分为四大领域：
+DevSpec 的核心架构分为六大领域：
 
 *   **Core Engine (核心引擎)**: 系统的"大脑"，负责维护知识图谱、解析代码、管理上下文。
-*   **CLI Interface (命令行界面)**: 系统的"嘴巴"和"耳朵"，负责与用户交互。
+*   **CLI Interface (命令行界面)**: 系统的"AI 接口"，为 AI Agent (Claude Code, Gemini CLI) 提供命令行工具，支持 AI 开发产品需求。
+*   **SpecGraph Viewer (知识库查看器)**: 系统的"人类窗口"，为人类用户提供 Web 界面展示 SpecGraph 知识库。
+*   **Frontend Infrastructure (前端基础设施)**: 系统的"UI 工具包"，为所有项目提供前端开发规范和组件库能力。
 *   **Quality Assurance (质量保障)**: 系统的"免疫系统"，负责确保代码与 Spec 的一致性。
 *   **Infrastructure (基础设施)**: 系统的"血液循环"，提供日志、配置、错误处理等横切能力。
 
@@ -163,6 +165,7 @@ SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质
 | "帮我实现这个 Component" | Substrate + Component YAML |
 | "帮我创建新的 YAML 文件" | `sub_meta_schema` |
 | "帮我写/审查代码" | `sub_tech_stack` + `sub_coding_style` |
+| "帮我写前端代码" | `sub_frontend_style` + 组件索引 |
 
 ---
 
@@ -335,18 +338,18 @@ exhaustiveness_check:
 
 ## 4. Domain: CLI Interface (`dom_cli`) <!-- id: dom_cli -->
 
-**Description**: 系统的"嘴巴"和"耳朵"，负责与用户交互。
+**Description**: 系统的"AI 接口"，为 AI Agent (Claude Code, Gemini CLI) 提供命令行工具，支持 AI 开发产品需求。
 
 ### 4.1 Feature: Command Structure <!-- id: feat_cli_command_structure -->
 
 基于 Typer 的命令分发系统，提供统一的 CLI 入口和命令注册机制。
 
-**Initial Commands (初始命令集)**:
+**Commands (命令集)**:
 *   `devspec init` - 初始化项目，为 Claude Code 和 Gemini CLI 生成 slash command 文件。
 *   `devspec monitor` - 运行一致性检查，生成 Dashboard。
 *   `devspec validate-prd` - 校验 PRD.md 格式是否符合规范。
 *   `devspec sync` - 同步所有 YAML 文件到数据库，支持完整的图谱重建。
-*   `devspec tree` - 查看产品结构树（预留）。
+*   `devspec context <phase>` - 为 AI Agent 输出阶段性上下文。
 *   `devspec generate <feature_id>` - 为指定 Feature 生成上下文 Prompt（预留）。
 
 **Components**:
@@ -356,33 +359,13 @@ exhaustiveness_check:
 *   **Validate PRD Command** <!-- id: comp_cli_validate_prd -->: `devspec validate-prd` 命令实现，调用 PRD Validator 校验 PRD.md 格式。
 *   **Sync Command** <!-- id: comp_cli_sync -->: `devspec sync` 命令实现，执行完整的 YAML 到数据库同步，包括节点、边和 Domain API。
 
-### 4.2 Feature: Visual Output <!-- id: feat_cli_visual_output -->
-
-基于 Rich 的结构化展示 (Tree, Tables)。
-
-### 4.3 Feature: Session Management <!-- id: feat_cli_session_management -->
-
-任务会话的生命周期管理 (Start/Commit/Abort)。
-
 ---
 
 ## 5. Domain: Quality Assurance (`dom_quality`) <!-- id: dom_quality -->
 
 **Description**: 系统的"免疫系统"，负责确保代码与 Spec 的一致性。
 
-### 5.1 Feature: Drift Detection <!-- id: feat_quality_drift_detection -->
-
-检测 Spec 与 Code 的偏差。
-
-### 5.2 Feature: Compliance Audit <!-- id: feat_quality_compliance_audit -->
-
-审计代码规范。
-
-### 5.3 Feature: Auto-Fix <!-- id: feat_quality_auto_fix -->
-
-自动修复简单的合规性问题。
-
-### 5.4 Feature: PRD Format Validator <!-- id: feat_quality_prd_validator -->
+### 5.1 Feature: PRD Format Validator <!-- id: feat_quality_prd_validator -->
 
 校验 PRD.md 是否符合 `des_prompt_prd_writer.md` 定义的结构规范。验证章节结构、锚点格式、双语规则等。
 
@@ -470,6 +453,160 @@ exhaustiveness_check:
 
 **Components**:
 *   **Error Handler** <!-- id: comp_error_handler -->: 错误捕获、分类、处理的核心逻辑。
+
+---
+
+## 7. Domain: SpecGraph Viewer (`dom_specview`) <!-- id: dom_specview -->
+
+**Description**: 系统的"人类窗口"，为人类用户提供 Web 界面展示 SpecGraph 知识库。这是 DevSpec 自身的知识库查看器，也可被其他项目复用。
+
+**Design Principles (设计原则)**:
+
+*Functional Principles (功能原则)*:
+*   **Read-Only**: 只提供查询和浏览能力，不提供编辑功能。减少决策负担 (Hick's Law)。
+*   **Multi-Dimensional**: 支持纵向层级、横向关系、设计理念等多维视图。符合"多重表征"学习理论。
+*   **Minimal Tech Stack**: 极简架构，纯 Python 实现 (FastAPI + Jinja2)。
+
+*Cognitive Design Principles (认知设计原则)*:
+*   **Progressive Disclosure (渐进式披露)**: 从概要到细节，用户控制深入节奏。初始折叠，按需加载。
+*   **Spatial Consistency (空间一致性)**: 导航、布局保持一致，支持空间记忆。Breadcrumb 全局可见。
+*   **Cognitive Anchoring (认知锚点)**: 新内容关联到已知内容。首页 (Vision + Domains) 是认知锚点。
+*   **Guided Exploration (引导式探索)**: 明确告诉用户"下一步可以做什么"。提供导航指引。
+*   **Graceful Degradation (优雅降级)**: 搜不到、加载失败时提供友好的恢复路径。
+
+### 7.1 Feature: SpecView Dashboard Core <!-- id: feat_specview_dashboard_core -->
+
+Web 服务的核心框架，提供首页概览和基础布局。
+
+**Core Functions (核心功能)**:
+1.  **Web Server**: 基于 FastAPI 的本地 Web 服务器，通过 `devspec serve` 启动。
+2.  **Home Page**: 产品概览页，展示 Product Vision 和 Domain 卡片。
+3.  **Base Layout**: 统一的页面布局框架，包含导航、侧边栏、内容区。
+4.  **Database Integration**: 集成现有的 SpecGraph Database，通过 GraphQuery 获取数据。
+
+**Startup Command**:
+*   `devspec serve [--port 8000]` - 启动本地 Web 服务器。
+
+**Components**:
+*   **SpecView Server** <!-- id: comp_specview_server -->: FastAPI 服务器核心，提供 Web 服务能力。
+*   **SpecView Routes** <!-- id: comp_specview_routes -->: FastAPI 路由处理器，实现各视图的 API 端点和页面渲染。
+*   **SpecView Templates** <!-- id: comp_specview_templates -->: Jinja2 模板引擎配置和基础模板文件。
+
+### 7.2 Feature: Hierarchy View <!-- id: feat_specview_hierarchy_view -->
+
+纵向层级浏览视图，展示 Domain → Feature → Component 的树形结构。
+
+**Core Functions (核心功能)**:
+1.  **Domain List**: 展示所有 Domain 及其描述。
+2.  **Feature List**: 按 Domain 分组展示 Features，显示 intent 和 assignment 状态。
+3.  **Component Detail**: 展示 Component 的详细设计 (API, Logic, Constants)。
+4.  **Breadcrumb Navigation**: 面包屑导航，支持快速层级跳转。
+
+### 7.3 Feature: Design View <!-- id: feat_specview_design_view -->
+
+设计理念视图，展示 Design 和 Substrate 节点。
+
+**Core Functions (核心功能)**:
+1.  **Design Nodes**: 展示所有 Design 节点 (des_*)，解释"为什么这样设计"。
+2.  **Substrate Nodes**: 展示所有 Substrate 节点 (sub_*)，说明"怎么执行"。
+3.  **Knowledge Classification**: 清晰区分 Design (Why) 和 Substrate (How)。
+4.  **Markdown Rendering**: 支持 Markdown 内容渲染。
+
+### 7.4 Feature: Relation View <!-- id: feat_specview_relation_view -->
+
+横向关系视图，展示节点间的依赖和消费关系。
+
+**Core Functions (核心功能)**:
+1.  **Dependency Graph**: 可视化 Feature/Component 之间的 depends_on 关系。
+2.  **Cross-Domain Relations**: 展示跨 Domain 的 API 消费关系 (consumes)。
+3.  **Relation Matrix**: 以矩阵形式展示 Domain 间的协作关系。
+4.  **Interactive Exploration**: 点击节点可查看其上下游依赖。
+
+**Components**:
+*   **SpecView Graph Renderer** <!-- id: comp_specview_graph_renderer -->: Mermaid 图渲染器，将节点关系转换为 Mermaid 图定义并生成 SVG。
+
+### 7.5 Feature: Search <!-- id: feat_specview_search -->
+
+搜索与过滤功能。
+
+**Core Functions (核心功能)**:
+1.  **Keyword Search**: 按 ID 或关键词搜索节点。
+2.  **Type Filter**: 按节点类型过滤 (Domain/Feature/Component/Design/Substrate)。
+3.  **Quick Jump**: 搜索结果快速跳转到节点详情。
+
+**Components**:
+*   **SpecView Search Engine** <!-- id: comp_specview_search_engine -->: 基于 SQLite FTS5 的全文搜索引擎。
+
+---
+
+## 8. Domain: Frontend Infrastructure (`dom_frontend`) <!-- id: dom_frontend -->
+
+**Description**: 系统的"UI 工具包"，为 DevSpec 管理的所有项目提供前端开发规范和组件库能力。这不仅服务于 DevSpec 自身，更是为未来项目提供的通用前端基础设施。
+
+**Design Principles (设计原则)** <!-- id: des_frontend_design -->:
+*   **Consistent Style (统一风格)**: 所有界面必须遵守一致的视觉风格和交互模式，避免风格碎片化。
+*   **Reuse First (复用优先)**: 开发新功能前必须先查阅组件库，优先复用现有组件。
+*   **Component Registry (组件注册)**: 新开发的组件必须注册到组件索引，供后续复用。
+*   **Zero Build (零构建)**: 不使用前端构建工具，通过 CDN 加载 Tailwind CSS 和 htmx。
+*   **Server-Side Rendering**: 使用 Jinja2 模板进行服务端渲染，最小化客户端复杂度。
+
+**Frontend Style Substrate** <!-- id: sub_frontend_style -->:
+
+前端编码规范定义在 `.specgraph/substrate/sub_frontend_style.yaml`，包括：
+
+*   **组件库结构**: `templates/components/` 目录存放共享组件
+*   **组件索引**: `_index.yaml` 记录所有组件的作用、参数、用法示例
+*   **命名规范**: snake_case 命名，语义化文件名
+*   **样式规范**: Tailwind CSS 类命名约定
+*   **开发流程**: 先注册 → 再设计 → 后编码 → 最后验证
+
+### 8.1 Feature: Component Library <!-- id: feat_frontend_component_library -->
+
+提供前端组件库的管理能力，包括组件注册、索引查询、验证、使用统计等功能。这是 dom_frontend 的核心价值所在。
+
+**Spec-First Principle (规范优先原则)**:
+
+组件由两部分组成，遵循 Spec-First 原则：
+*   **Markdown 文档 (.md)** - 设计规范，定义组件的用途、参数、样式要求 (**Truth**)
+*   **HTML 模板 (.html)** - 代码实现，必须遵循 MD 文档定义 (**Projection**)
+
+**Component Development Workflow (组件开发流程)**:
+
+```
+1. 注册 (Register)
+   └─ devspec frontend register <category> <name> --desc "描述"
+   └─ 创建 MD 设计文档，更新索引 (status: registered)
+
+2. 设计 (Design)
+   └─ 编辑 .md 文件，完善参数、样式规范
+   └─ MD 文档是 Truth，后续编码必须遵循
+
+3. 编码 (Implement)
+   └─ 根据 MD 文档编写 .html 模板
+   └─ 索引状态变为 (status: implemented)
+
+4. 验证 (Verify)
+   └─ devspec frontend check
+   └─ 确保 MD 与 HTML 一致 (status: verified)
+```
+
+**Core Functions (核心功能)**:
+1.  **Component Registration**: 注册新组件，创建 MD 设计文档模板，更新索引。**必须先注册才能编码**。
+2.  **Component Index**: 维护组件索引文件 (`_index.yaml`)，记录所有组件的状态、路径、参数。
+3.  **Component Query**: 提供 API 查询可用组件，供 AI 和开发者在编写前端代码前查阅。
+4.  **Component Validation**: 验证组件的 MD 文档与 HTML 代码是否一致，是否符合 `sub_frontend_style.yaml` 规范。
+5.  **Usage Statistics**: 统计组件使用情况，识别高频组件和未使用组件。
+
+**CLI Commands**:
+*   `devspec frontend register <category> <name> --desc "描述"` - 注册新组件，创建 MD 设计文档。
+*   `devspec frontend list` - 列出所有已注册的前端组件及其状态。
+*   `devspec frontend check` - 检查组件库的完整性 (MD 与 HTML 一致性)。
+*   `devspec frontend stats` - 显示组件使用统计。
+
+**Components**:
+*   **Component Library Manager** <!-- id: comp_frontend_component_library -->: 前端组件库管理器核心实现，包含 ComponentRegistrar (注册器)、ComponentIndex (索引管理)、ComponentValidator (验证器)、UsageStatistics (使用统计) 四个核心类，以及 CLI 命令实现。
+
+**Note**: 模板引擎 (Jinja2) 和样式系统 (Tailwind CSS) 的具体配置已在 `sub_frontend_style.yaml` 中定义，属于 Substrate 层约束，不需要独立的 Feature。
 
 ---
 *Generated by DevSpec Agent - strict adherence to Spec-First Protocol.*

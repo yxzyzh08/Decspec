@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+
+{% block title %}Relations - {{ node.name }} - SpecGraph Viewer{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-800 mb-2">{{ node.name }}</h1>
+  <p class="text-gray-500 mb-6">{{ node.id }} ({{ node.type }})</p>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <!-- Relations Lists -->
+    <div class="space-y-6">
+      <!-- Depends On -->
+      {% if relations.depends_on %}
+      <section class="bg-white rounded-lg shadow-md p-4">
+        <h2 class="font-semibold text-gray-800 mb-3 flex items-center">
+          <span class="mr-2">⬆️</span> Depends On (上游依赖)
+        </h2>
+        <div class="space-y-2">
+          {% for item in relations.depends_on %}
+          <a href="/relation/node/{{ item.id }}" class="block p-2 rounded hover:bg-gray-50 border-l-4 node-{{ item.type }}">
+            <div class="font-medium text-gray-800">{{ item.name }}</div>
+            <div class="text-sm text-gray-500">{{ item.id }}</div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Depended By -->
+      {% if relations.depended_by %}
+      <section class="bg-white rounded-lg shadow-md p-4">
+        <h2 class="font-semibold text-gray-800 mb-3 flex items-center">
+          <span class="mr-2">⬇️</span> Depended By (下游依赖)
+        </h2>
+        <div class="space-y-2">
+          {% for item in relations.depended_by %}
+          <a href="/relation/node/{{ item.id }}" class="block p-2 rounded hover:bg-gray-50 border-l-4 node-{{ item.type }}">
+            <div class="font-medium text-gray-800">{{ item.name }}</div>
+            <div class="text-sm text-gray-500">{{ item.id }}</div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Realized By -->
+      {% if relations.realized_by %}
+      <section class="bg-white rounded-lg shadow-md p-4">
+        <h2 class="font-semibold text-gray-800 mb-3 flex items-center">
+          <span class="mr-2">🔧</span> Realized By (实现者)
+        </h2>
+        <div class="space-y-2">
+          {% for item in relations.realized_by %}
+          <a href="/relation/node/{{ item.id }}" class="block p-2 rounded hover:bg-gray-50 border-l-4 node-{{ item.type }}">
+            <div class="font-medium text-gray-800">{{ item.name }}</div>
+            <div class="text-sm text-gray-500">{{ item.id }}</div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <!-- Realizes -->
+      {% if relations.realizes %}
+      <section class="bg-white rounded-lg shadow-md p-4">
+        <h2 class="font-semibold text-gray-800 mb-3 flex items-center">
+          <span class="mr-2">📋</span> Realizes (实现的 Feature)
+        </h2>
+        <div class="space-y-2">
+          {% for item in relations.realizes %}
+          <a href="/relation/node/{{ item.id }}" class="block p-2 rounded hover:bg-gray-50 border-l-4 node-{{ item.type }}">
+            <div class="font-medium text-gray-800">{{ item.name }}</div>
+            <div class="text-sm text-gray-500">{{ item.id }}</div>
+          </a>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      {% if not relations.depends_on and not relations.depended_by and not relations.realized_by and not relations.realizes %}
+      <div class="bg-white rounded-lg shadow-md p-6 text-center text-gray-500">
+        <p class="text-4xl mb-4">🔗</p>
+        <p>此节点暂无已记录的依赖关系</p>
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Mermaid Graph -->
+    <div class="bg-white rounded-lg shadow-md p-4">
+      <h2 class="font-semibold text-gray-800 mb-4">依赖图</h2>
+      <div class="overflow-auto">
+        <div class="mermaid">
+{{ mermaid_code }}
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-4">
+        实线箭头 (→) 表示 depends_on，虚线箭头 (⇢) 表示 realized_by
+      </p>
+    </div>
+  </div>
+</div>
+{% endblock %}

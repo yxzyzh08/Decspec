@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Hierarchy - SpecGraph Viewer{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">层级结构</h1>
+
+  <p class="text-gray-600 mb-6">
+    点击 Domain 展开查看其 Features，再点击 Feature 展开查看其 Components。
+  </p>
+
+  <div class="bg-white rounded-lg shadow-md p-6">
+    {% if domains %}
+    <div class="space-y-2">
+      {% for domain in domains %}
+      <div class="border-l-4 border-purple-500 pl-4 py-2 hover:bg-gray-50">
+        <div class="flex items-center justify-between">
+          <a href="/hierarchy/node/domain/{{ domain.id }}" class="font-semibold text-gray-800 hover:text-blue-600">
+            {{ domain.name }}
+          </a>
+          <button
+            hx-get="/hierarchy/domain/{{ domain.id }}/children"
+            hx-target="#children-{{ domain.id }}"
+            hx-trigger="click once"
+            hx-swap="innerHTML"
+            class="text-sm text-gray-500 hover:text-blue-600 flex items-center">
+            <span class="mr-1">{{ domain.feature_count }} features</span>
+            <span class="expand-icon transition-transform">▶</span>
+          </button>
+        </div>
+        {% if domain.description %}
+        <p class="text-sm text-gray-600 mt-1">{{ domain.description }}</p>
+        {% endif %}
+        <div id="children-{{ domain.id }}" class="mt-2"></div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div class="text-center py-8 text-gray-500">
+      <p class="text-4xl mb-4">📭</p>
+      <p>暂无数据。请先运行 <code class="bg-gray-100 px-2 py-1 rounded">devspec sync</code> 同步知识库。</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

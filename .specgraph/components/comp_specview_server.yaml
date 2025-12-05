@@ -1,0 +1,109 @@
+# Component Definition: SpecView Server
+# Implements: feat_specview_dashboard_core
+# Validated against sub_meta_schema.yaml
+
+id: comp_specview_server
+type: module
+desc: "FastAPI 服务器核心，提供 SpecGraph Viewer 的 Web 服务能力。"
+file_path: "devspec/specview/"
+
+tech_stack:
+  - fastapi
+  - uvicorn
+  - jinja2
+
+dependencies:
+  - comp_graph_database  # For querying SpecGraph data
+  - comp_specview_routes  # For API route handlers
+  - comp_specview_templates  # For Jinja2 template rendering
+
+# === 详细设计 (Design) ===
+design:
+  api:
+    - signature: "def create_app() -> FastAPI"
+      desc: "创建并配置 FastAPI 应用实例"
+      params: []
+      returns:
+        type: "FastAPI"
+        desc: "配置好的 FastAPI 应用"
+
+    - signature: "def serve(port: int = 8000) -> None"
+      desc: "启动本地 Web 服务器展示 SpecGraph"
+      params:
+        - name: "port"
+          type: "int"
+          desc: "服务器端口号 (默认 8000)"
+      returns:
+        type: "None"
+        desc: "无返回值，服务器运行直到被中断"
+
+    - signature: "def get_navigation_guide() -> List[NavItem]"
+      desc: "获取首页导航指南项目列表"
+      params: []
+      returns:
+        type: "List[NavItem]"
+        desc: "导航项目列表 (Hierarchy, Design, Relations, Search)"
+
+  logic: |
+    1. create_app() - 创建 FastAPI 应用:
+       1.1 创建 FastAPI 实例，配置 title="SpecGraph Viewer"
+       1.2 配置静态文件目录 (CSS, JS 如需要)
+       1.3 配置 Jinja2 模板引擎 (指向 templates/ 目录)
+       1.4 注册所有路由:
+           - include_router(hierarchy_router, prefix="/hierarchy")
+           - include_router(design_router, prefix="/design")
+           - include_router(relation_router, prefix="/relation")
+           - include_router(search_router, prefix="/search")
+       1.5 配置首页路由 "/" 渲染 home.html
+
+    2. serve(port) - 启动服务器:
+       2.1 调用 create_app() 获取应用实例
+       2.2 使用 uvicorn.run(app, host="0.0.0.0", port=port) 启动
+       2.3 打印启动信息到控制台
+
+    3. get_navigation_guide() - 获取导航指南:
+       3.1 返回预定义的 NAV_GUIDE 常量列表
+       3.2 每个项目包含 view, icon, title, purpose, best_for, url
+
+  constants:
+    NAV_GUIDE: |
+      [
+        {
+          "view": "Hierarchy View",
+          "icon": "tree",
+          "title": "层级结构",
+          "purpose": "从整体到细节理解产品架构",
+          "best_for": "初次接触产品的用户",
+          "url": "/hierarchy"
+        },
+        {
+          "view": "Design View",
+          "icon": "lightbulb",
+          "title": "设计知识",
+          "purpose": "理解设计决策和执行规范",
+          "best_for": "需要理解'为什么'和'怎么做'的用户",
+          "url": "/design"
+        },
+        {
+          "view": "Relations View",
+          "icon": "git-branch",
+          "title": "依赖关系",
+          "purpose": "理解节点间的依赖和实现关系",
+          "best_for": "分析影响范围或追溯依赖链的用户",
+          "url": "/relation"
+        },
+        {
+          "view": "Search",
+          "icon": "search",
+          "title": "全局搜索",
+          "purpose": "快速定位特定节点",
+          "best_for": "知道目标节点ID或名称的用户",
+          "url": "/search"
+        }
+      ]
+
+  error_handling:
+    - condition: "端口被占用"
+      action: "捕获 OSError，提示用户更换端口"
+    - condition: "模板目录不存在"
+      action: "启动前检查，抛出 FileNotFoundError 并给出明确提示"

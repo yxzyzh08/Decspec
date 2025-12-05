@@ -1,0 +1,228 @@
+# Component Definition: SpecView Graph Renderer
+# Implements: feat_specview_relation_view
+# Validated against sub_meta_schema.yaml
+
+id: comp_specview_graph_renderer
+type: module
+desc: "Mermaid 图渲染器，将节点关系转换为 Mermaid 图定义并生成 SVG。"
+file_path: "devspec/specview/"
+
+tech_stack:
+  - mermaid-py  # Python Mermaid 渲染库 (服务端渲染)
+
+dependencies:
+  - comp_graph_database  # For querying node relations
+  - comp_graph_query  # For traversing relation graph
+
+# === 详细设计 (Design) ===
+design:
+  api:
+    - signature: "class GraphRenderer"
+      desc: "Mermaid 图渲染器类"
+      methods:
+        - signature: "def __init__(self, db: GraphDatabase)"
+          desc: "初始化渲染器，注入数据库依赖"
+          params:
+            - name: "db"
+              type: "GraphDatabase"
+              desc: "SpecGraph 数据库实例"
+
+        - signature: "def get_node_relations(node_id: str, depth: int = 2) -> RelationGraph"
+          desc: "获取节点的关系数据 (用于 Mermaid 图生成)"
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "节点 ID (feat_xxx, comp_xxx)"
+            - name: "depth"
+              type: "int"
+              desc: "遍历深度，默认 2 层"
+          returns:
+            type: "RelationGraph"
+            desc: "包含 nodes, edges 的关系图数据"
+
+        - signature: "def generate_mermaid(node_id: str, depth: int = 2) -> str"
+          desc: "生成 Mermaid 图定义字符串"
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "中心节点 ID"
+            - name: "depth"
+              type: "int"
+              desc: "遍历深度"
+          returns:
+            type: "str"
+            desc: "Mermaid 图定义 (graph LR ...)"
+
+        - signature: "def render_svg(mermaid_code: str) -> str"
+          desc: "将 Mermaid 代码渲染为 SVG 字符串 (服务端渲染)"
+          params:
+            - name: "mermaid_code"
+              type: "str"
+              desc: "Mermaid 图定义"
+          returns:
+            type: "str"
+            desc: "SVG 字符串"
+
+        - signature: "def get_cached_svg(node_id: str, depth: int = 2) -> Optional[str]"
+          desc: "从缓存获取已渲染的 SVG (避免重复渲染)"
+          params:
+            - name: "node_id"
+              type: "str"
+              desc: "节点 ID"
+            - name: "depth"
+              type: "int"
+              desc: "遍历深度"
+          returns:
+            type: "Optional[str]"
+            desc: "缓存的 SVG 字符串，未命中返回 None"
+
+        - signature: "def invalidate_cache(node_id: Optional[str] = None) -> None"
+          desc: "使缓存失效 (节点更新时调用)"
+          params:
+            - name: "node_id"
+              type: "Optional[str]"
+              desc: "指定节点 ID 失效，None 则清空全部缓存"
+
+    - signature: "@dataclass class RelationGraph"
+      desc: "关系图数据结构"
+      fields:
+        - name: "center_node"
+          type: "str"
+          desc: "中心节点 ID"
+        - name: "nodes"
+          type: "List[GraphNode]"
+          desc: "所有节点列表"
+        - name: "edges"
+          type: "List[GraphEdge]"
+          desc: "所有边列表"
+
+    - signature: "@dataclass class GraphNode"
+      desc: "图节点数据"
+      fields:
+        - name: "id"
+          type: "str"
+          desc: "节点 ID"
+        - name: "label"
+          type: "str"
+          desc: "显示标签"
+        - name: "type"
+          type: "str"
+          desc: "节点类型 (feature, component, domain)"
+
+    - signature: "@dataclass class GraphEdge"
+      desc: "图边数据"
+      fields:
+        - name: "source"
+          type: "str"
+          desc: "源节点 ID"
+        - name: "target"
+          type: "str"
+          desc: "目标节点 ID"
+        - name: "relation"
+          type: "str"
+          desc: "关系类型 (depends_on, realized_by)"
+
+  logic: |
+    0. __init__(self, db):
+       0.1 保存数据库引用: self.db = db
+       0.2 初始化 SVG 缓存: self._svg_cache: Dict[str, str] = {}
+       0.3 缓存键格式: f"{node_id}:{depth}"
+
+    1. get_node_relations(node_id, depth):
+       1.1 初始化 visited = set(), nodes = [], edges = []
+       1.2 BFS 遍历关系图，深度限制为 depth:
+           queue = [(node_id, 0)]
+           while queue:
+               current_id, current_depth = queue.pop(0)
+               if current_id in visited or current_depth > depth:
+                   continue
+               visited.add(current_id)
+               node = db.get_node(current_id)
+               nodes.append(GraphNode(node.id, node.name, node.type))
+               # 获取出边
+               if hasattr(node, 'depends_on'):
+                   for dep_id in node.depends_on:
+                       edges.append(GraphEdge(current_id, dep_id, 'depends_on'))
+                       queue.append((dep_id, current_depth + 1))
+               if hasattr(node, 'realized_by'):
+                   for comp_id in node.realized_by:
+                       edges.append(GraphEdge(current_id, comp_id, 'realized_by'))
+                       queue.append((comp_id, current_depth + 1))
+       1.3 返回 RelationGraph(node_id, nodes, edges)
+
+    2. generate_mermaid(node_id, depth):
+       2.1 调用 get_node_relations(node_id, depth) 获取关系图
+       2.2 初始化 Mermaid 代码: lines = ["graph LR"]
+       2.3 为每个节点生成节点定义:
+           for node in graph.nodes:
+               style = NODE_STYLES[node.type]
+               lines.append(f'  {node.id}["{node.label}"]')
+               lines.append(f'  style {node.id} fill:{style.fill}')
+       2.4 为每个边生成边定义:
+           for edge in graph.edges:
+               arrow = EDGE_ARROWS[edge.relation]
+               lines.append(f'  {edge.source} {arrow} {edge.target}')
+       2.5 返回 '\n'.join(lines)
+
+    3. render_svg(mermaid_code):
+       3.1 使用 mermaid-py 库渲染:
+           from mermaid import Mermaid
+           diagram = Mermaid(mermaid_code)
+           return diagram.to_svg()
+       3.2 如果渲染失败，返回错误占位 SVG
+
+    4. get_cached_svg(node_id, depth):
+       4.1 构建缓存键: cache_key = f"{node_id}:{depth}"
+       4.2 检查缓存: return self._svg_cache.get(cache_key)
+
+    5. render_and_cache(node_id, depth) -> str:
+       5.1 先检查缓存: cached = get_cached_svg(node_id, depth)
+       5.2 如果命中: return cached
+       5.3 生成 Mermaid: mermaid_code = generate_mermaid(node_id, depth)
+       5.4 渲染 SVG: svg = render_svg(mermaid_code)
+       5.5 存入缓存: self._svg_cache[f"{node_id}:{depth}"] = svg
+       5.6 return svg
+
+    6. invalidate_cache(node_id):
+       6.1 如果 node_id 为 None: self._svg_cache.clear()
+       6.2 否则: 删除所有以 node_id 开头的缓存键
+           keys_to_delete = [k for k in self._svg_cache if k.startswith(f"{node_id}:")]
+           for k in keys_to_delete: del self._svg_cache[k]
+
+  constants:
+    NODE_STYLES:
+      feature:
+        fill: "#3B82F6"  # blue-500
+        stroke: "#1D4ED8"
+      component:
+        fill: "#10B981"  # green-500
+        stroke: "#047857"
+      domain:
+        fill: "#8B5CF6"  # purple-500
+        stroke: "#6D28D9"
+      design:
+        fill: "#F59E0B"  # amber-500
+        stroke: "#D97706"
+
+    EDGE_ARROWS:
+      depends_on: "-->"  # 实线箭头
+      realized_by: "-.->"  # 虚线箭头 (实现关系)
+
+    MERMAID_EXAMPLE: |
+      graph LR
+        feat_A["Feature A"]
+        feat_B["Feature B"]
+        comp_A["Component A"]
+        style feat_A fill:#3B82F6
+        style feat_B fill:#3B82F6
+        style comp_A fill:#10B981
+        feat_A --> feat_B
+        feat_A -.-> comp_A
+
+  error_handling:
+    - condition: "节点不存在"
+      action: "返回空 RelationGraph，generate_mermaid 返回单节点图"
+    - condition: "Mermaid 渲染失败"
+      action: "返回带错误信息的占位 SVG"
+    - condition: "循环依赖"
+      action: "visited set 防止重复访问，自动截断循环"

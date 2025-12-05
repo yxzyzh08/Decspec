@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+
+{% block title %}Design Knowledge - SpecGraph Viewer{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">设计知识</h1>
+
+  <!-- Knowledge Type Guide -->
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold text-gray-700 mb-4">知识类型指南</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for guide in knowledge_guide %}
+      <div class="bg-white rounded-lg shadow-md p-4 border-l-4 {% if guide.color == 'blue' %}border-blue-500{% else %}border-green-500{% endif %}">
+        <div class="flex items-center mb-2">
+          <span class="text-xl mr-2">
+            {% if guide.icon == 'lightbulb' %}💡{% else %}📐{% endif %}
+          </span>
+          <h3 class="font-semibold">{{ guide.type }}</h3>
+        </div>
+        <p class="text-gray-700 font-medium mb-1">{{ guide.question }}</p>
+        <p class="text-sm text-gray-600">{{ guide.when_to_read }}</p>
+        <div class="mt-2 text-sm text-gray-500">
+          常见内容: {{ guide.typical_content | join(', ') }}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Design Nodes -->
+  <section class="mb-8">
+    <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+      <span class="text-xl mr-2">💡</span> Design (Why)
+    </h2>
+    <div class="bg-white rounded-lg shadow-md divide-y">
+      {% for design in designs %}
+      <a href="/design/design/{{ design.id }}" class="block p-4 hover:bg-gray-50">
+        <div class="font-semibold text-gray-800 hover:text-blue-600">{{ design.name }}</div>
+        <div class="text-sm text-gray-500 mt-1">{{ design.id }}</div>
+        {% if design.intent %}
+        <p class="text-gray-600 mt-2">{{ design.intent }}</p>
+        {% endif %}
+      </a>
+      {% else %}
+      <div class="p-4 text-gray-500 text-center">暂无 Design 节点</div>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Substrate Nodes -->
+  <section>
+    <h2 class="text-lg font-semibold text-gray-700 mb-4 flex items-center">
+      <span class="text-xl mr-2">📐</span> Substrate (How)
+    </h2>
+    <div class="bg-white rounded-lg shadow-md divide-y">
+      {% for substrate in substrates %}
+      <a href="/design/substrate/{{ substrate.id }}" class="block p-4 hover:bg-gray-50">
+        <div class="font-semibold text-gray-800 hover:text-blue-600">{{ substrate.name }}</div>
+        <div class="text-sm text-gray-500 mt-1">{{ substrate.id }}</div>
+        {% if substrate.description %}
+        <p class="text-gray-600 mt-2">{{ substrate.description | truncate(100) }}</p>
+        {% endif %}
+      </a>
+      {% else %}
+      <div class="p-4 text-gray-500 text-center">暂无 Substrate 节点</div>
+      {% endfor %}
+    </div>
+  </section>
+</div>
+{% endblock %}

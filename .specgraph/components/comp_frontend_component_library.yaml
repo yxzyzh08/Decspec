@@ -1,0 +1,401 @@
+# Component Definition: Frontend Component Library Manager
+# Part of feat_frontend_component_library
+# Validated against sub_meta_schema.yaml
+
+id: comp_frontend_component_library
+type: module
+desc: "前端组件库管理器，提供组件注册、索引读取、查询、验证、使用统计等功能。遵循 Spec-First 原则：组件 = MD文档(Truth) + HTML代码(Projection)。"
+file_path: "devspec/frontend/"
+# 包目录结构:
+# devspec/frontend/
+# ├── __init__.py          # 导出公开 API
+# ├── models.py            # ParamInfo, ValidationResult, ComponentInfo
+# ├── component_index.py   # ComponentIndex 类
+# ├── component_validator.py # ComponentValidator 类
+# ├── usage_statistics.py  # UsageStatistics 类
+# └── cli.py               # CLI 命令实现
+
+tech_stack:
+  - typer
+  - rich
+  - pyyaml
+  - pathlib
+
+dependencies:
+  - comp_cli_app
+
+# === 详细设计 (Design) ===
+design:
+  # 公开接口定义
+  api:
+    # === 数据类 ===
+    - signature: "class ParamInfo"
+      desc: "组件参数信息"
+      fields:
+        - name: "name"
+          type: "str"
+          desc: "参数名"
+        - name: "type"
+          type: "str"
+          desc: "参数类型"
+        - name: "desc"
+          type: "str"
+          desc: "参数描述"
+
+    - signature: "class ValidationResult"
+      desc: "验证结果数据类"
+      fields:
+        - name: "is_valid"
+          type: "bool"
+          desc: "是否验证通过"
+        - name: "errors"
+          type: "List[str]"
+          desc: "错误列表"
+        - name: "warnings"
+          type: "List[str]"
+          desc: "警告列表"
+
+    - signature: "class ComponentInfo"
+      desc: "组件信息数据类"
+      fields:
+        - name: "id"
+          type: "str"
+          desc: "组件 ID，如 comp_card_domain"
+        - name: "category"
+          type: "str"
+          desc: "组件分类，如 cards, badges, forms"
+        - name: "name"
+          type: "str"
+          desc: "组件名称，如 domain, status"
+        - name: "desc"
+          type: "str"
+          desc: "组件功能描述"
+        - name: "params"
+          type: "List[ParamInfo]"
+          desc: "组件参数列表"
+        - name: "example"
+          type: "Optional[str]"
+          desc: "使用示例"
+        - name: "md_path"
+          type: "str"
+          desc: "Markdown 文档路径 (Truth)"
+        - name: "html_path"
+          type: "str"
+          desc: "HTML 模板路径 (Projection)"
+        - name: "status"
+          type: "str"
+          desc: "组件状态: registered | implemented | verified"
+
+    - signature: "class ComponentIndex"
+      desc: "组件索引管理类"
+      methods:
+        - signature: "def __init__(self, root_path: Path) -> None"
+          desc: "初始化组件索引，加载 _index.yaml"
+          params:
+            - name: "root_path"
+              type: "Path"
+              desc: "组件库根目录 (templates/components/)"
+        - signature: "def load(self) -> None"
+          desc: "加载或重新加载组件索引"
+        - signature: "def list_components(self) -> List[ComponentInfo]"
+          desc: "列出所有已注册的组件"
+          returns:
+            type: "List[ComponentInfo]"
+            desc: "组件信息列表"
+        - signature: "def get_component(self, component_id: str) -> Optional[ComponentInfo]"
+          desc: "根据 ID 获取组件信息"
+          params:
+            - name: "component_id"
+              type: "str"
+              desc: "组件 ID"
+          returns:
+            type: "Optional[ComponentInfo]"
+            desc: "组件信息，不存在则返回 None"
+        - signature: "def search(self, keyword: str) -> List[ComponentInfo]"
+          desc: "按关键词搜索组件 (搜索 id, desc, params)"
+          params:
+            - name: "keyword"
+              type: "str"
+              desc: "搜索关键词"
+          returns:
+            type: "List[ComponentInfo]"
+            desc: "匹配的组件列表"
+
+    - signature: "class ComponentValidator"
+      desc: "组件验证器"
+      methods:
+        - signature: "def __init__(self, index: ComponentIndex, root_path: Path) -> None"
+          desc: "初始化验证器"
+        - signature: "def validate_index(self) -> ValidationResult"
+          desc: "验证索引文件格式是否正确"
+          returns:
+            type: "ValidationResult"
+            desc: "验证结果，包含错误和警告列表"
+        - signature: "def validate_component(self, component_id: str) -> ValidationResult"
+          desc: "验证单个组件是否符合规范"
+          params:
+            - name: "component_id"
+              type: "str"
+              desc: "组件 ID"
+          returns:
+            type: "ValidationResult"
+            desc: "验证结果"
+        - signature: "def validate_all(self) -> ValidationResult"
+          desc: "验证所有组件"
+          returns:
+            type: "ValidationResult"
+            desc: "汇总验证结果"
+
+    - signature: "class ComponentRegistrar"
+      desc: "组件注册器 - 创建新组件的 MD 文档并更新索引"
+      methods:
+        - signature: "def __init__(self, root_path: Path) -> None"
+          desc: "初始化注册器"
+        - signature: "def register(self, component_id: str, category: str, name: str, desc: str, params: List[ParamInfo]) -> Path"
+          desc: "注册新组件：创建 MD 文档模板，更新 _index.yaml"
+          params:
+            - name: "component_id"
+              type: "str"
+              desc: "组件 ID (comp_{category}_{name})"
+            - name: "category"
+              type: "str"
+              desc: "组件分类"
+            - name: "name"
+              type: "str"
+              desc: "组件名称"
+            - name: "desc"
+              type: "str"
+              desc: "组件描述"
+            - name: "params"
+              type: "List[ParamInfo]"
+              desc: "组件参数列表"
+          returns:
+            type: "Path"
+            desc: "创建的 MD 文档路径"
+        - signature: "def generate_md_template(self, component: ComponentInfo) -> str"
+          desc: "生成组件 MD 文档模板内容"
+
+    - signature: "class UsageStatistics"
+      desc: "组件使用统计"
+      methods:
+        - signature: "def __init__(self, index: ComponentIndex, templates_path: Path) -> None"
+          desc: "初始化统计器"
+        - signature: "def analyze(self) -> Dict[str, int]"
+          desc: "分析所有模板文件，统计组件使用次数"
+          returns:
+            type: "Dict[str, int]"
+            desc: "组件 ID 到使用次数的映射"
+        - signature: "def get_unused(self) -> List[str]"
+          desc: "获取未使用的组件列表"
+          returns:
+            type: "List[str]"
+            desc: "未使用的组件 ID 列表"
+
+    # === CLI Commands ===
+    - signature: "def register_cmd(category: str, name: str, desc: str) -> None"
+      desc: "CLI: devspec frontend register - 注册新组件 (创建 MD 文档)"
+
+    - signature: "def list_cmd(root: Path = typer.Option(...)) -> None"
+      desc: "CLI: devspec frontend list - 列出所有组件"
+
+    - signature: "def check_cmd(root: Path = typer.Option(...)) -> None"
+      desc: "CLI: devspec frontend check - 检查组件库完整性 (MD 与 HTML 一致性)"
+
+    - signature: "def stats_cmd(root: Path = typer.Option(...)) -> None"
+      desc: "CLI: devspec frontend stats - 显示使用统计"
+
+  # 伪代码逻辑
+  logic: |
+    === ComponentIndex ===
+    1. __init__(root_path):
+       1.1 保存 root_path
+       1.2 初始化空的 components 字典
+       1.3 调用 load()
+
+    2. load():
+       2.1 构建索引文件路径: root_path / "_index.yaml"
+       2.2 如果文件不存在，初始化空索引并返回
+       2.3 使用 yaml.safe_load 读取文件
+       2.4 遍历 components 列表，转换为 ComponentInfo 对象
+       2.5 以 id 为 key 存入 components 字典
+
+    3. list_components():
+       3.1 返回 list(self.components.values())
+
+    4. get_component(component_id):
+       4.1 返回 self.components.get(component_id)
+
+    5. search(keyword):
+       5.1 keyword 转小写
+       5.2 遍历所有组件，检查 id/desc/params 是否包含 keyword
+       5.3 返回匹配的组件列表
+
+    === ComponentRegistrar ===
+    1. register(component_id, category, name, desc, params):
+       1.1 验证 component_id 格式: comp_{category}_{name}
+       1.2 检查组件是否已存在于索引
+       1.3 创建目录: templates/components/{category}/
+       1.4 生成 MD 文档内容 (调用 generate_md_template)
+       1.5 写入 MD 文件: {category}/{name}.md
+       1.6 更新 _index.yaml，添加新组件条目 (status: registered)
+       1.7 返回 MD 文件路径
+
+    2. generate_md_template(component):
+       2.1 生成标准 MD 模板:
+           # {component.id}
+           ## 描述
+           {component.desc}
+           ## 参数
+           | 名称 | 类型 | 描述 |
+           ...
+           ## 样式规范
+           (待填写)
+           ## 使用示例
+           ```html
+           {% include "components/{category}/{name}.html" %}
+           ```
+
+    === ComponentValidator ===
+    1. validate_index():
+       1.1 检查 _index.yaml 是否存在
+       1.2 检查 YAML 格式是否正确
+       1.3 检查必填字段 (id, category, name, desc)
+       1.4 检查 ID 命名规范 (comp_{category}_{name})
+       1.5 返回 ValidationResult
+
+    2. validate_component(component_id):
+       2.1 从索引获取组件信息
+       2.2 检查 MD 文档是否存在 (Truth)
+       2.3 如果 status != 'registered'，检查 HTML 是否存在
+       2.4 如果 HTML 存在，检查是否符合 MD 文档定义
+       2.5 检查文件命名是否符合 snake_case
+       2.6 返回 ValidationResult
+
+    3. validate_all():
+       3.1 调用 validate_index()
+       3.2 遍历所有组件，调用 validate_component()
+       3.3 汇总所有错误和警告
+       3.4 返回汇总结果
+
+    === UsageStatistics ===
+    1. analyze():
+       1.1 初始化 usage_count 字典 (所有组件初始为 0)
+       1.2 遍历 templates_path 下所有 .html 文件
+       1.3 对每个文件，搜索 {% include "components/..." %}
+       1.4 提取组件路径，匹配到索引中的组件
+       1.5 增加对应组件的 usage_count
+       1.6 返回 usage_count
+
+    2. get_unused():
+       2.1 调用 analyze()
+       2.2 返回 usage_count 为 0 的组件 ID 列表
+
+    === CLI Registration ===
+    1. 创建 frontend_app = typer.Typer(name="frontend", help="Frontend component library management")
+    2. 注册子命令:
+       - frontend_app.command("register")(register_cmd)
+       - frontend_app.command("list")(list_cmd)
+       - frontend_app.command("check")(check_cmd)
+       - frontend_app.command("stats")(stats_cmd)
+    3. 在 main.py 中: app.add_typer(frontend_app, name="frontend")
+
+    === CLI Commands ===
+    1. register_cmd(category, name, desc):
+       1.1 构建 component_id: comp_{category}_{name}
+       1.2 创建 ComponentRegistrar
+       1.3 调用 register() 创建 MD 文档
+       1.4 打印成功信息和下一步指引:
+           "✓ 组件已注册: {component_id}"
+           "  MD 文档: {md_path}"
+           "  下一步: 编辑 MD 文档完善设计，然后开发 HTML 模板"
+
+    2. list_cmd(root):
+       2.1 创建 ComponentIndex(root)
+       2.2 获取组件列表
+       2.3 使用 Rich Table 展示: ID | Category | Status | Description
+       2.4 打印组件总数
+
+    3. check_cmd(root):
+       3.1 创建 ComponentIndex 和 ComponentValidator
+       3.2 调用 validate_all()
+       3.3 使用 Rich 展示验证结果
+       3.4 如有错误，exit code = 1
+
+    4. stats_cmd(root):
+       4.1 创建 ComponentIndex 和 UsageStatistics
+       4.2 调用 analyze()
+       4.3 使用 Rich Table 展示: Component | Usage Count
+       4.4 高亮显示未使用的组件
+
+  # 关键常量
+  constants:
+    INDEX_FILE: "_index.yaml"
+    COMPONENT_ID_PATTERN: "comp_{category}_{name}"
+    INCLUDE_PATTERN: '{% include "components/([^"]+)" %}'
+    COMPONENT_STATUS:
+      - "registered"   # 已注册，MD 文档已创建
+      - "implemented"  # 已实现，HTML 代码已编写
+      - "verified"     # 已验证，check 通过
+
+  # 输出文件格式 (组件索引文件)
+  output_files:
+    - path: "templates/components/_index.yaml"
+      format: |
+        # 前端组件索引 (自动生成，请勿手动编辑)
+        # 使用 devspec frontend register 添加新组件
+        components:
+          - id: comp_{category}_{name}
+            category: "{category}"
+            name: "{name}"
+            desc: "{description}"
+            md_path: "{category}/{name}.md"
+            html_path: "{category}/{name}.html"
+            status: "registered"  # registered | implemented | verified
+            params:
+              - name: "{param_name}"
+                type: "{param_type}"
+                desc: "{param_desc}"
+            example: |
+              {% include "components/{category}/{name}.html" %}
+      encoding: "utf-8"
+
+    - path: "templates/components/{category}/{name}.md"
+      format: |
+        # {component_id}
+
+        ## 描述
+        {description}
+
+        ## 参数
+        | 名称 | 类型 | 必填 | 描述 |
+        |------|------|------|------|
+        | {param_name} | {param_type} | {required} | {param_desc} |
+
+        ## 样式规范
+        - 使用 Tailwind CSS 类
+        - 遵循 sub_frontend_style.yaml 定义的调色板
+        - (待完善)
+
+        ## 使用示例
+        ```jinja2
+        {% include "components/{category}/{name}.html" with context %}
+        ```
+
+        ## 设计备注
+        (待填写)
+      encoding: "utf-8"
+
+  # 错误处理
+  error_handling:
+    - condition: "索引文件不存在"
+      action: "打印警告，返回空组件列表"
+    - condition: "索引 YAML 格式错误"
+      action: "抛出 ComponentIndexError，包含详细错误信息"
+    - condition: "组件 ID 已存在"
+      action: "抛出错误，提示组件已注册"
+    - condition: "MD 文档不存在"
+      action: "记录为验证错误 (Truth 缺失)"
+    - condition: "HTML 文件不存在但 status != registered"
+      action: "记录为验证警告"
+    - condition: "HTML 与 MD 不一致"
+      action: "记录为验证警告，列出差异"

@@ -1,0 +1,72 @@
+# Feature Definition: SpecView Search
+# Part of SpecGraph Viewer (L0: dom_specview)
+# Validated against sub_meta_schema.yaml
+
+id: feat_specview_search
+domain: dom_specview
+source_anchor: "PRD.md#feat_specview_search"
+intent: "提供全文搜索功能，使人类用户能够快速定位到特定的 Feature、Component 或 Design 节点。"
+
+user_stories:
+  - "As a human user, I want to search for nodes by ID or name."
+  - "As a human user, I want to search within node content (intent, desc, logic)."
+  - "As a human user, I want to filter search results by node type (Feature, Component, Design)."
+  - "As a human user, I want to see search results with context snippets."
+
+workflow:
+  - step: 1
+    action: "User types search query in the search box."
+    output: "htmx sends request, results update dynamically."
+  - step: 2
+    action: "User applies type filter."
+    output: "Results filtered to show only selected node types."
+  - step: 3
+    action: "User clicks on a search result."
+    output: "Navigates to the node's detail page."
+
+# 空状态处理 - 优雅降级原则 (P2 改进)
+empty_states:
+  no_results:
+    icon: "search-x"
+    message: "未找到匹配的节点"
+    suggestions:
+      - text: "尝试更短的关键词"
+        example: "搜索 'core' 而非 'core engine module'"
+      - text: "尝试搜索 ID 前缀"
+        example: "feat_, comp_, dom_, des_, sub_"
+      - text: "浏览层级结构找到目标"
+        action: "link_to_hierarchy"
+  loading_error:
+    icon: "alert-circle"
+    message: "搜索服务暂时不可用"
+    suggestions:
+      - text: "刷新页面重试"
+        action: "reload"
+      - text: "浏览层级结构代替搜索"
+        action: "link_to_hierarchy"
+
+# 搜索提示 - 帮助用户更好地使用搜索
+search_hints:
+  placeholder: "搜索节点 ID、名称或内容..."
+  tips:
+    - trigger: "empty_input"
+      hint: "输入关键词开始搜索，支持 ID、名称、描述"
+    - trigger: "single_char"
+      hint: "请输入至少 2 个字符"
+    - trigger: "id_prefix"
+      hint: "检测到 ID 前缀，将优先匹配节点 ID"
+
+design_principles:
+  - name: "Instant Search"
+    desc: "Use htmx to provide instant search results as user types."
+  - name: "Context Snippets"
+    desc: "Show matching text with highlighted keywords."
+  - name: "Graceful Degradation"
+    desc: "Always provide helpful suggestions when search fails or returns no results."
+
+depends_on:
+  - feat_specview_dashboard_core
+
+realized_by:
+  - comp_specview_routes
+  - comp_specview_search_engine

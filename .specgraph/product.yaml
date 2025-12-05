@@ -32,11 +32,51 @@ domains:
 
   - id: dom_cli
     name: "CLI Interface"
-    description: "系统的'嘴巴'和'耳朵'，负责与用户交互。"
+    description: "系统的'AI 接口'，为 AI Agent (Claude Code, Gemini CLI) 提供命令行工具，支持 AI 开发产品需求。"
     exports:
       - name: "run_command"
         signature: "run_command(cmd: str, args: List[str]) -> int"
         description: "Execute a CLI command"
+
+  - id: dom_specview
+    name: "SpecGraph Viewer"
+    description: |
+      系统的'人类窗口'，为人类用户提供 Web 界面展示 SpecGraph 知识库。
+      设计原则：Read-Only (只读), Progressive Disclosure (渐进式披露),
+      Spatial Consistency (空间一致性), Guided Exploration (引导式探索)。
+    exports:
+      - name: "serve"
+        signature: "serve(port: int = 8000) -> None"
+        description: "Start the local web server for SpecGraph viewing"
+      - name: "get_navigation_guide"
+        signature: "get_navigation_guide() -> List[NavItem]"
+        description: "Get navigation guide items for home page (Hierarchy, Design, Relations, Search)"
+      - name: "get_node_relations"
+        signature: "get_node_relations(node_id: str, depth: int = 2) -> RelationGraph"
+        description: "Get node relationships for relation view (Mermaid graph data)"
+      - name: "search_nodes"
+        signature: "search_nodes(query: str, type_filter: Optional[str] = None) -> SearchResult"
+        description: "Search nodes by keyword with type filtering"
+
+  - id: dom_frontend
+    name: "Frontend Infrastructure"
+    description: "系统的'UI 工具包'，为所有项目提供前端开发规范和组件库能力。遵循 Spec-First 原则：组件 = MD文档(Truth) + HTML代码(Projection)。"
+    exports:
+      - name: "register_component"
+        signature: "register_component(category: str, name: str, desc: str) -> Path"
+        description: "Register a new component (creates MD design doc, updates index)"
+      - name: "list_components"
+        signature: "list_components() -> List[ComponentInfo]"
+        description: "List all registered frontend components with status"
+      - name: "validate_components"
+        signature: "validate_components() -> ValidationResult"
+        description: "Validate MD-HTML consistency for all components"
+      - name: "get_component_index"
+        signature: "get_component_index() -> ComponentIndex"
+        description: "Get the component index for querying available components"
+      - name: "get_usage_stats"
+        signature: "get_usage_stats() -> Dict[str, int]"
+        description: "Get component usage statistics across templates"
 
   - id: dom_quality
     name: "Quality Assurance"

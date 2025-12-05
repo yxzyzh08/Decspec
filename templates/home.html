@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}SpecGraph Viewer - Home{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Product Overview -->
+  <section class="bg-white rounded-lg shadow-md p-6 mb-8">
+    <h1 class="text-3xl font-bold text-gray-800 mb-2">{{ product.name }}</h1>
+    <p class="text-gray-500 mb-4">Version {{ product.version }}</p>
+    {% if product.vision %}
+    <div class="bg-blue-50 border-l-4 border-blue-500 p-4 rounded">
+      <h2 class="font-semibold text-blue-800 mb-2">Product Vision</h2>
+      <p class="text-gray-700 whitespace-pre-line">{{ product.vision }}</p>
+    </div>
+    {% endif %}
+  </section>
+
+  <!-- Navigation Guide -->
+  <section class="mb-8">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">选择探索路径</h2>
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {% for nav in nav_guide %}
+      <a href="{{ nav.url }}" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-blue-500 group">
+        <div class="flex items-center mb-2">
+          <span class="text-2xl mr-3">
+            {% if nav.icon == 'tree' %}🌳
+            {% elif nav.icon == 'lightbulb' %}💡
+            {% elif nav.icon == 'git-branch' %}🔗
+            {% elif nav.icon == 'search' %}🔍
+            {% endif %}
+          </span>
+          <h3 class="text-lg font-semibold text-gray-800 group-hover:text-blue-600">{{ nav.title }}</h3>
+        </div>
+        <p class="text-gray-600 mb-2">{{ nav.purpose }}</p>
+        <p class="text-sm text-gray-500">适合: {{ nav.best_for }}</p>
+      </a>
+      {% endfor %}
+    </div>
+  </section>
+
+  <!-- Quick Stats -->
+  <section class="bg-white rounded-lg shadow-md p-6">
+    <h2 class="text-xl font-semibold text-gray-800 mb-4">知识库概览</h2>
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+      <div class="bg-purple-50 rounded-lg p-4">
+        <div class="text-3xl font-bold text-purple-600">{{ stats.domains }}</div>
+        <div class="text-gray-600">Domains</div>
+      </div>
+      <div class="bg-blue-50 rounded-lg p-4">
+        <div class="text-3xl font-bold text-blue-600">{{ stats.features }}</div>
+        <div class="text-gray-600">Features</div>
+      </div>
+      <div class="bg-green-50 rounded-lg p-4">
+        <div class="text-3xl font-bold text-green-600">{{ stats.components }}</div>
+        <div class="text-gray-600">Components</div>
+      </div>
+      <div class="bg-amber-50 rounded-lg p-4">
+        <div class="text-3xl font-bold text-amber-600">{{ stats.designs }}</div>
+        <div class="text-gray-600">Design/Substrate</div>
+      </div>
+    </div>
+  </section>
+</div>
+{% endblock %}

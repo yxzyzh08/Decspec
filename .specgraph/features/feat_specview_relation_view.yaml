@@ -1,0 +1,107 @@
+# Feature Definition: SpecView Relation View
+# Part of SpecGraph Viewer (L0: dom_specview)
+# Validated against sub_meta_schema.yaml
+
+id: feat_specview_relation_view
+domain: dom_specview
+source_anchor: "PRD.md#feat_specview_relation_view"
+intent: "提供节点详情页中的关系展示（上下游依赖列表），使人类用户能够浏览节点间的连接并进行导航。"
+
+user_stories:
+  - "As a human user, I want to see which features depend on a given feature."
+  - "As a human user, I want to see which components implement a feature."
+  - "As a human user, I want to see which components a component depends on."
+  - "As a human user, I want to navigate between related nodes by clicking links."
+  - "As a human user, I want to see a visual dependency graph between features."
+  - "As a human user, I want to see which domains consume APIs from other domains."
+
+workflow:
+  - step: 1
+    action: "User views a node's detail page."
+    output: "Related nodes section shows incoming and outgoing relationships as lists."
+  - step: 2
+    action: "User clicks on a related node."
+    output: "Navigates to that node's detail page."
+  - step: 3
+    action: "User hovers on relationship type."
+    output: "Tooltip explains the relationship (depends_on, realized_by, etc.)."
+
+# MVP 范围定义 - 明确当前版本实现范围 (P1 改进: 增加简易图)
+mvp_scope:
+  included:
+    - "节点详情页显示 depends_on / realized_by 关系列表"
+    - "点击关系跳转到目标节点"
+    - "Tooltip 显示关系类型说明"
+    - "简易依赖图 (使用 Mermaid 服务端渲染)"  # P1 新增
+  deferred:
+    - name: "Interactive Dependency Graph"
+      desc: "交互式依赖图 (需 D3.js，支持拖拽、缩放)"
+      complexity: "high"
+    - name: "Relation Matrix"
+      desc: "Domain 协作关系矩阵视图"
+      complexity: "high"
+    - name: "Cross-Domain API Relations"
+      desc: "跨 Domain 的 API 消费关系展示"
+      complexity: "medium"
+
+# 简易依赖图 - 空间映射支撑关系理解 (P1 改进)
+simple_dependency_graph:
+  enabled: true
+  renderer: "mermaid"
+  render_mode: "server-side"  # 服务端渲染为 SVG，无需前端 JS 库
+  max_depth: 2  # 默认显示 2 层关系
+  graph_types:
+    - type: "feature_dependencies"
+      desc: "Feature 之间的依赖关系"
+      example: |
+        graph LR
+          feat_A[Feature A] --> feat_B[Feature B]
+          feat_B --> feat_C[Feature C]
+          feat_A -.-> feat_C
+    - type: "component_realization"
+      desc: "Component 实现 Feature 的关系"
+      example: |
+        graph TD
+          feat_X[Feature X] --> comp_A[Component A]
+          feat_X --> comp_B[Component B]
+  styling:
+    node_colors:
+      feature: "#3B82F6"  # blue-500
+      component: "#10B981"  # green-500
+      domain: "#8B5CF6"  # purple-500
+    edge_styles:
+      depends_on: "solid"
+      realized_by: "dashed"
+
+relation_display:
+  - section: "Depends On (上游依赖)"
+    edge_type: "depends_on"
+    direction: "outgoing"
+    desc: "当前节点依赖的其他节点"
+  - section: "Depended By (下游依赖)"
+    edge_type: "depends_on"
+    direction: "incoming"
+    desc: "依赖当前节点的其他节点"
+  - section: "Realized By (实现者)"
+    edge_type: "realized_by"
+    direction: "outgoing"
+    desc: "实现当前 Feature 的 Component 列表"
+  - section: "Realizes (实现的 Feature)"
+    edge_type: "realized_by"
+    direction: "incoming"
+    desc: "当前 Component 实现的 Feature 列表"
+
+design_principles:
+  - name: "Bidirectional Display"
+    desc: "Show both 'depends on' and 'depended by' relationships."
+  - name: "Relationship Types"
+    desc: "Clearly distinguish different edge types with icons and colors."
+  - name: "MVP First"
+    desc: "First implement list-based relation display, defer complex visualizations."
+
+depends_on:
+  - feat_specview_dashboard_core
+
+realized_by:
+  - comp_specview_routes
+  - comp_specview_graph_renderer

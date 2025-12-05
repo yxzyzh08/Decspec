@@ -8,12 +8,12 @@ source_anchor: "PRD.md#feat_cli_command_structure"
 intent: "提供基于 Typer 的统一 CLI 入口和命令注册机制，使用户能够通过命令行调用 DevSpec 的各项功能。"
 
 user_stories:
-  - "As a user, I want to run `devspec init` to generate slash command files for Claude Code and Gemini CLI."
-  - "As a user, I want to run `devspec monitor` to check PRD-Spec consistency and generate a dashboard."
-  - "As a user, I want to run `devspec validate-prd` to check if PRD.md follows the format rules."
-  - "As a user, I want to run `devspec sync` to synchronize all YAML files to the database."
-  - "As a user, I want to run `devspec tree` to view the product structure (reserved)."
-  - "As a user, I want to run `devspec generate <feature_id>` to generate context prompts for a feature (reserved)."
+  - "As an AI agent, I want to run `devspec init` to generate slash command files for Claude Code and Gemini CLI."
+  - "As an AI agent, I want to run `devspec monitor` to check PRD-Spec consistency and generate a dashboard."
+  - "As an AI agent, I want to run `devspec validate-prd` to check if PRD.md follows the format rules."
+  - "As an AI agent, I want to run `devspec sync` to synchronize all YAML files to the database."
+  - "As an AI agent, I want to run `devspec context <phase>` to get phase-specific context for requirement collection."
+  - "As an AI agent, I want to run `devspec generate <feature_id>` to generate context prompts for a feature (reserved)."
   - "As a developer, I want to easily add new commands with type-safe arguments using Typer."
 
 workflow:

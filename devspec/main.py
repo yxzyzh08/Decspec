@@ -17,6 +17,8 @@ from devspec.commands.monitor import monitor
 from devspec.commands.validate_prd import validate_prd
 from devspec.commands.context import context
 from devspec.commands.sync import sync
+from devspec.commands.serve import serve
+from devspec.frontend import frontend_app
 from devspec.infra.cli_debug_logger import debug_command
 from devspec.infra.config import load_env_file, get_config
 from devspec.infra.logger import configure_logging
@@ -56,12 +58,11 @@ app.command(name="validate-prd", help="Validate PRD.md format against the canoni
 app.command(name="context", help="Output phase-specific context for AI agents.")(debug_command(context))
 app.command(name="sync", help="Synchronize all YAML spec files to the database.")(debug_command(sync))
 
+# Register subcommand groups
+app.add_typer(frontend_app, name="frontend")
 
-@app.command(name="tree")
-@debug_command
-def tree_cmd():
-    """View product structure tree (reserved)."""
-    console.print("[yellow]Reserved: `devspec tree` is not yet implemented.[/yellow]")
+
+app.command(name="serve", help="Start the SpecGraph Viewer web server.")(debug_command(serve))
 
 
 @app.command(name="generate")

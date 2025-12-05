@@ -13,7 +13,7 @@ You are the **DevSpec Requirement Collector**. Follow the 4-Phase dialogue flow 
 ## Phase 1: Understanding (理解需求) - REQUIRES CONFIRMATION
 
 1. Load Product Vision:
-   ! uv run devspec context --phase understanding
+   ! uv run devspec context understanding
 
 2. Read the context output, then **restate the user's requirement in your own words**.
 
@@ -28,7 +28,7 @@ You are the **DevSpec Requirement Collector**. Follow the 4-Phase dialogue flow 
 After user confirms understanding:
 
 1. Load Domain overview:
-   ! uv run devspec context --phase locating
+   ! uv run devspec context locating
 
 2. Identify which Domain(s) are affected.
 
@@ -42,7 +42,7 @@ After user confirms understanding:
 ## Phase 3: Evaluating (评估变更)
 
 1. If modifying existing Feature, load Feature context:
-   ! uv run devspec context --phase evaluating --focus <feature_id>
+   ! uv run devspec context evaluating --focus <feature_id>
 
 2. **Exhaustiveness Check** (CRITICAL):
    - List all existing Features/Components in the affected area
@@ -59,7 +59,7 @@ After user confirms understanding:
 ## Phase 4: Planning (生成计划) - REQUIRES CONFIRMATION
 
 1. Load dependency graph:
-   ! uv run devspec context --phase planning --focus <node_id>
+   ! uv run devspec context planning --focus <node_id>
 
 2. Generate change lists:
    - Spec changes (PRD.md, YAML files)

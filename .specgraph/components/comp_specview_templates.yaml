@@ -1,0 +1,229 @@
+# Component Definition: SpecView Templates
+# Implements: feat_specview_dashboard_core, feat_specview_hierarchy_view, feat_specview_design_view
+# Validated against sub_meta_schema.yaml
+
+id: comp_specview_templates
+type: module
+desc: "Jinja2 模板引擎配置和基础模板文件，实现 SpecGraph Viewer 的页面渲染。"
+file_path: "templates/"
+
+tech_stack:
+  - jinja2
+  - tailwindcss  # CDN 引入，无需构建
+  - htmx  # CDN 引入，实现无 JS 动态交互
+
+dependencies: []
+
+# === 详细设计 (Design) ===
+design:
+  api:
+    - signature: "def get_templates() -> Jinja2Templates"
+      desc: "获取配置好的 Jinja2Templates 实例"
+      params: []
+      returns:
+        type: "Jinja2Templates"
+        desc: "指向 templates/ 目录的模板实例"
+
+  logic: |
+    模板文件结构:
+    templates/
+    ├── base.html           # 基础布局 (Header, Footer, 全局样式)
+    ├── home.html           # 首页 (导航指南、产品概览)
+    ├── hierarchy.html      # 层级结构视图
+    ├── design.html         # 设计知识视图
+    ├── relation.html       # 依赖关系视图
+    ├── search.html         # 搜索视图
+    ├── node_detail.html    # 通用节点详情页
+    ├── components/         # 组件库 (遵循 Spec-First 原则)
+    │   ├── _index.yaml     # 组件索引
+    │   ├── cards/          # 卡片类组件
+    │   ├── nav/            # 导航类组件
+    │   └── badges/         # 徽章类组件
+    └── partials/           # htmx 局部模板
+        ├── feature_list.html
+        ├── component_list.html
+        ├── relation_graph.html
+        └── search_results.html
+
+    1. base.html 基础布局设计:
+       1.1 <head>: 引入 Tailwind CSS CDN, htmx CDN
+       1.2 <header>: Logo, 导航链接 (Home, Hierarchy, Design, Relations), 搜索框
+       1.3 <nav id="breadcrumb">: Breadcrumb 导航区域 (Spatial Consistency)
+       1.4 <main>: 内容区域 {% block content %}{% endblock %}
+       1.5 <footer>: 版权信息
+
+    2. home.html 首页设计:
+       2.1 产品概览卡片 (名称, 版本, 描述, Vision)
+       2.2 导航指南区域 (4 个视图的引导卡片):
+           - 每个卡片包含 icon, title, purpose, best_for
+           - 使用 Tailwind grid 布局 (2x2)
+       2.3 快速入口: "开始浏览" 按钮指向 Hierarchy View
+
+    3. hierarchy.html 层级视图设计:
+       3.1 树形结构容器，使用缩进表示层级
+       3.2 每个 Domain/Feature 有展开/折叠按钮
+       3.3 htmx 懒加载: hx-get="/hierarchy/domain/{id}/children" hx-trigger="click"
+       3.4 使用 Tailwind 的 border-l 实现层级连线
+
+    4. node_detail.html 节点详情设计:
+       4.1 Breadcrumb 导航 (Product > Domain > Feature > Component)
+       4.2 节点基础信息 (ID, Name, Desc)
+       4.3 可折叠分区 (使用 <details> 原生 HTML5):
+           - <details open> 默认展开
+           - <details> 默认折叠
+       4.4 关系链接区域 (depends_on, realized_by 列表)
+
+    5. htmx 交互模式:
+       5.1 懒加载: hx-get, hx-trigger="click"
+       5.2 搜索: hx-get="/search?q=...", hx-trigger="keyup changed delay:300ms"
+       5.3 部分替换: hx-target="#result-container", hx-swap="innerHTML"
+
+  # 模板代码片段 - 提高代码可还原性
+  templates_detail:
+    # 层级视图树节点 (可复用模式)
+    hierarchy_tree_item: |
+      {# Domain 层级节点 #}
+      <div class="pl-4 border-l-2 border-gray-300 hover:border-blue-500 transition-colors">
+        <button hx-get="/hierarchy/domain/{{ domain.id }}/children"
+                hx-target="#children-{{ domain.id }}"
+                hx-trigger="click once"
+                hx-swap="innerHTML"
+                class="flex items-center w-full text-left py-2 hover:bg-gray-50">
+          <span class="expand-icon mr-2 transition-transform">▶</span>
+          <span class="font-medium">{{ domain.name }}</span>
+          <span class="ml-2 text-sm text-gray-500">({{ domain.feature_count }} features)</span>
+        </button>
+        <div id="children-{{ domain.id }}" class="pl-4"></div>
+      </div>
+
+    # Feature 列表项 (htmx partial)
+    feature_list_item: |
+      {# partials/feature_list.html #}
+      {% for feature in features %}
+      <div class="pl-4 border-l-2 border-blue-300 py-1">
+        <a href="/node/feature/{{ feature.id }}"
+           class="flex items-center hover:text-blue-600">
+          <span class="text-blue-500 mr-2">◆</span>
+          <span>{{ feature.name or feature.id }}</span>
+        </a>
+        <button hx-get="/hierarchy/feature/{{ feature.id }}/children"
+                hx-target="#comp-{{ feature.id }}"
+                hx-trigger="click once"
+                class="text-xs text-gray-400 hover:text-gray-600 ml-6">
+          展开组件
+        </button>
+        <div id="comp-{{ feature.id }}" class="pl-4"></div>
+      </div>
+      {% endfor %}
+
+    # 节点详情可折叠分区
+    collapsible_section: |
+      {# node_detail.html 中的可折叠分区 #}
+      <details {% if section.default_state == 'expanded' %}open{% endif %} class="mb-4">
+        <summary class="cursor-pointer bg-gray-100 px-4 py-2 rounded-t font-medium hover:bg-gray-200">
+          {{ section.title }}
+        </summary>
+        <div class="border border-t-0 border-gray-200 px-4 py-3 rounded-b">
+          {% block section_content %}{% endblock %}
+        </div>
+      </details>
+
+    # API 签名展示
+    api_signature_display: |
+      {# Component 详情的 API 展示 #}
+      <div class="bg-gray-900 text-green-400 p-4 rounded font-mono text-sm overflow-x-auto">
+        {% for api in component.design.api %}
+        <div class="mb-2">
+          <span class="text-blue-400">def</span> {{ api.signature }}
+          {% if api.desc %}
+          <span class="text-gray-500 ml-4"># {{ api.desc }}</span>
+          {% endif %}
+        </div>
+        {% endfor %}
+      </div>
+
+    # 搜索结果项 (带高亮)
+    search_result_item: |
+      {# partials/search_results.html #}
+      {% for item in results.items %}
+      <a href="{{ item.url }}" class="block p-4 border-b hover:bg-gray-50">
+        <div class="flex items-center gap-2">
+          <span class="px-2 py-0.5 text-xs rounded
+            {% if item.node_type == 'feature' %}bg-blue-100 text-blue-700
+            {% elif item.node_type == 'component' %}bg-green-100 text-green-700
+            {% else %}bg-gray-100 text-gray-700{% endif %}">
+            {{ item.node_type }}
+          </span>
+          <span class="font-medium">{{ item.title }}</span>
+        </div>
+        <p class="text-sm text-gray-600 mt-1">{{ item.snippet | safe }}</p>
+      </a>
+      {% else %}
+      {# 空状态 #}
+      <div class="text-center py-8">
+        <div class="text-4xl mb-4">🔍</div>
+        <p class="text-gray-600">{{ results.suggestions[0].text }}</p>
+        <a href="/hierarchy" class="text-blue-600 hover:underline mt-2 inline-block">
+          浏览层级结构
+        </a>
+      </div>
+      {% endfor %}
+
+    # Breadcrumb 导航
+    breadcrumb_nav: |
+      {# 全局 Breadcrumb，在 base.html 中 #}
+      <nav id="breadcrumb" class="bg-gray-100 px-4 py-2 text-sm">
+        <ol class="flex items-center gap-2">
+          <li><a href="/" class="text-blue-600 hover:underline">DevSpec</a></li>
+          {% for crumb in breadcrumbs %}
+          <li class="flex items-center gap-2">
+            <span class="text-gray-400">/</span>
+            {% if crumb.url %}
+            <a href="{{ crumb.url }}" class="text-blue-600 hover:underline">{{ crumb.name }}</a>
+            {% else %}
+            <span class="text-gray-700">{{ crumb.name }}</span>
+            {% endif %}
+          </li>
+          {% endfor %}
+        </ol>
+      </nav>
+
+  constants:
+    BASE_TEMPLATE_HEAD: |
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>{% block title %}SpecGraph Viewer{% endblock %}</title>
+        <script src="https://cdn.tailwindcss.com"></script>
+        <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+        <style>
+          /* 自定义样式 */
+          .node-feature { border-left-color: #3B82F6; }
+          .node-component { border-left-color: #10B981; }
+          .node-design { border-left-color: #8B5CF6; }
+        </style>
+      </head>
+
+    HEADER_TEMPLATE: |
+      <header class="bg-gray-800 text-white p-4">
+        <div class="container mx-auto flex justify-between items-center">
+          <a href="/" class="text-xl font-bold">DevSpec</a>
+          <nav class="flex gap-6">
+            <a href="/" class="hover:text-blue-300">Home</a>
+            <a href="/hierarchy" class="hover:text-blue-300">Hierarchy</a>
+            <a href="/design" class="hover:text-blue-300">Design</a>
+            <a href="/relation" class="hover:text-blue-300">Relations</a>
+          </nav>
+          <form hx-get="/search" hx-target="#main-content" hx-trigger="submit">
+            <input type="search" name="q" placeholder="搜索节点..." class="px-3 py-1 rounded text-black">
+          </form>
+        </div>
+      </header>
+
+  output_files:
+    - path: "templates/base.html"
+      format: "Jinja2 base template with {% block %} placeholders"
+    - path: "templates/home.html"
+      format: "Jinja2 template extending base.html"
+    - path: "templates/partials/*.html"
+      format: "Jinja2 partial templates for htmx responses"

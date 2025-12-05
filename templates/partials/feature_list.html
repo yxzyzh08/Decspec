@@ -1,0 +1,25 @@
+{# Partial: Feature list under a domain (htmx lazy-load) #}
+{% for feature in features %}
+<div class="pl-4 border-l-2 border-blue-300 py-2 ml-4 hover:bg-gray-50">
+  <div class="flex items-center justify-between">
+    <a href="/hierarchy/node/feature/{{ feature.id }}" class="text-gray-800 hover:text-blue-600">
+      <span class="text-blue-500 mr-2">◆</span>
+      <span>{{ feature.name }}</span>
+    </a>
+    <button
+      hx-get="/hierarchy/feature/{{ feature.id }}/children"
+      hx-target="#comp-{{ feature.id }}"
+      hx-trigger="click once"
+      hx-swap="innerHTML"
+      class="text-xs text-gray-400 hover:text-blue-600">
+      {{ feature.component_count }} components ▶
+    </button>
+  </div>
+  {% if feature.intent %}
+  <p class="text-sm text-gray-500 mt-1 ml-6">{{ feature.intent | truncate(80) }}</p>
+  {% endif %}
+  <div id="comp-{{ feature.id }}" class="mt-2"></div>
+</div>
+{% else %}
+<div class="ml-4 py-2 text-gray-500 text-sm">暂无 Feature</div>
+{% endfor %}

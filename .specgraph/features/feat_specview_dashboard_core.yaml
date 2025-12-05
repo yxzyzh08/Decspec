@@ -1,0 +1,96 @@
+# Feature Definition: SpecView Dashboard Core
+# Part of SpecGraph Viewer (L0: dom_specview)
+# Validated against sub_meta_schema.yaml
+
+id: feat_specview_dashboard_core
+domain: dom_specview
+source_anchor: "PRD.md#feat_specview_dashboard_core"
+intent: "提供 SpecGraph Viewer 的核心框架，包括 FastAPI 服务器、Jinja2 模板引擎和全局布局，使人类用户能够通过浏览器访问产品知识库。"
+
+user_stories:
+  - "As a human user, I want to start a local web server via `devspec serve` to browse the product structure."
+  - "As a human user, I want to see a consistent navigation layout across all pages."
+  - "As a human user, I want to see Product Vision and description on the home page."
+  - "As a human user, I want to see all Domains as cards showing name, description, and feature count."
+  - "As a human user, I want to click a Domain card to navigate to its features."
+  - "As a developer, I want to use htmx for dynamic interactions without writing JavaScript."
+
+workflow:
+  - step: 1
+    action: "User runs `devspec serve --port 8000` from terminal."
+    output: "FastAPI server starts on specified port."
+  - step: 2
+    action: "User opens browser to http://localhost:8000."
+    output: "Home page shows Product Vision at top, Domain cards below."
+  - step: 3
+    action: "User clicks a Domain card."
+    output: "Navigates to domain detail page showing features list."
+  - step: 4
+    action: "User clicks navigation links to explore different views."
+    output: "htmx loads content dynamically into main area."
+
+home_page_content:
+  - section: "Product Vision"
+    desc: "显示 product.yaml 中的 name, version, vision 字段"
+  - section: "Navigation Guide"
+    desc: "导航指引区域，帮助用户选择探索路径"
+  - section: "Domain Cards"
+    desc: "展示所有 Domain，每张卡片包含 name, description, feature_count"
+    card_actions: "点击跳转到 Domain 详情页"
+
+# 导航指引 - 减少选择焦虑，提供认知路标 (P0 改进)
+navigation_guide:
+  - view: "Hierarchy View"
+    icon: "tree"
+    title: "层级结构"
+    purpose: "从整体到细节理解产品架构"
+    best_for: "初次接触产品的用户"
+    url: "/hierarchy"
+  - view: "Design View"
+    icon: "lightbulb"
+    title: "设计理念"
+    purpose: "理解设计决策的原因"
+    best_for: "想了解'为什么这样设计'的用户"
+    url: "/design"
+  - view: "Relation View"
+    icon: "link"
+    title: "关系图"
+    purpose: "理解节点间的依赖关系"
+    best_for: "需要了解模块协作的用户"
+    url: "/relations"
+  - view: "Search"
+    icon: "search"
+    title: "搜索"
+    purpose: "快速定位到具体内容"
+    best_for: "已知目标的用户"
+    url: "/search"
+
+# 全局导航布局 - 空间一致性原则
+global_layout:
+  header:
+    - logo: "DevSpec"
+    - nav_links: ["Home", "Hierarchy", "Design", "Relations"]
+    - search_box: true
+  breadcrumb:
+    always_visible: true
+    format: "Product > {current_location}"
+  sidebar:
+    collapsible: true
+    context_aware: true  # 根据当前视图显示相关内容
+
+design_principles:
+  - name: "Zero Build"
+    desc: "No build step required - use CDN for Tailwind CSS and htmx."
+  - name: "Server-Side Rendering"
+    desc: "Use Jinja2 templates, minimize client-side complexity."
+  - name: "Database First"
+    desc: "Read from SQLite database, not YAML files directly."
+  - name: "Component Library"
+    desc: "Use shared component library (see sub_frontend_style.yaml) for consistent UI."
+  - name: "Reuse First"
+    desc: "Check component index before creating new UI elements."
+
+realized_by:
+  - comp_specview_server
+  - comp_specview_routes
+  - comp_specview_templates

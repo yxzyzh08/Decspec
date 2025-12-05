@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}SpecGraph Viewer{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/htmx.org@1.9.10"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+  <script>mermaid.initialize({startOnLoad:true});</script>
+  <style>
+    .node-feature { border-left-color: #3B82F6; }
+    .node-component { border-left-color: #10B981; }
+    .node-design { border-left-color: #8B5CF6; }
+    .node-domain { border-left-color: #F59E0B; }
+    .node-substrate { border-left-color: #6B7280; }
+    .htmx-indicator { opacity: 0; transition: opacity 200ms ease-in; }
+    .htmx-request .htmx-indicator { opacity: 1; }
+    .htmx-request.htmx-indicator { opacity: 1; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen flex flex-col">
+  <header class="bg-gray-800 text-white p-4 shadow-lg">
+    <div class="container mx-auto flex justify-between items-center">
+      <a href="/" class="text-xl font-bold hover:text-blue-300">DevSpec</a>
+      <nav class="hidden md:flex gap-6">
+        <a href="/" class="hover:text-blue-300 {% if request.url.path == '/' %}text-blue-300{% endif %}">Home</a>
+        <a href="/hierarchy" class="hover:text-blue-300 {% if '/hierarchy' in request.url.path %}text-blue-300{% endif %}">Hierarchy</a>
+        <a href="/design" class="hover:text-blue-300 {% if '/design' in request.url.path %}text-blue-300{% endif %}">Design</a>
+        <a href="/relation" class="hover:text-blue-300 {% if '/relation' in request.url.path %}text-blue-300{% endif %}">Relations</a>
+      </nav>
+      <form action="/search" method="get" class="flex">
+        <input type="search" name="q" placeholder="搜索节点..."
+               class="px-3 py-1 rounded-l text-black focus:outline-none focus:ring-2 focus:ring-blue-500 w-32 md:w-48"
+               hx-get="/search/results"
+               hx-trigger="keyup changed delay:300ms"
+               hx-target="#search-dropdown"
+               hx-indicator="#search-spinner">
+        <button type="submit" class="bg-blue-600 px-3 py-1 rounded-r hover:bg-blue-700">
+          <span id="search-spinner" class="htmx-indicator">⏳</span>
+          <span class="htmx-indicator-off">🔍</span>
+        </button>
+      </form>
+    </div>
+    <div id="search-dropdown" class="absolute right-4 top-14 bg-white rounded shadow-lg z-50 max-h-64 overflow-auto hidden"></div>
+  </header>
+
+  <nav id="breadcrumb" class="bg-gray-100 px-4 py-2 text-sm border-b">
+    <div class="container mx-auto">
+      <ol class="flex items-center gap-2">
+        <li><a href="/" class="text-blue-600 hover:underline">DevSpec</a></li>
+        {% block breadcrumb %}
+        {% for crumb in breadcrumbs %}
+        <li class="flex items-center gap-2">
+          <span class="text-gray-400">/</span>
+          {% if crumb.url %}
+          <a href="{{ crumb.url }}" class="text-blue-600 hover:underline">{{ crumb.name }}</a>
+          {% else %}
+          <span class="text-gray-700 font-medium">{{ crumb.name }}</span>
+          {% endif %}
+        </li>
+        {% endfor %}
+        {% endblock %}
+      </ol>
+    </div>
+  </nav>
+
+  <main id="main-content" class="container mx-auto py-6 px-4 flex-grow">
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="bg-gray-800 text-gray-400 text-center py-4">
+    <p>SpecGraph Viewer - Powered by DevSpec</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+
+{% block title %}Search - SpecGraph Viewer{% endblock %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-800 mb-6">搜索</h1>
+
+  <!-- Search Box -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <form action="/search" method="get" class="flex gap-4">
+      <input type="search" name="q" value="{{ query }}" placeholder="输入关键词搜索..."
+             class="flex-grow px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+             hx-get="/search/results"
+             hx-trigger="keyup changed delay:300ms"
+             hx-target="#search-results"
+             hx-include="[name='type_filter']">
+      <select name="type_filter" class="px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+        <option value="">所有类型</option>
+        <option value="feature" {% if type_filter == 'feature' %}selected{% endif %}>Feature</option>
+        <option value="component" {% if type_filter == 'component' %}selected{% endif %}>Component</option>
+        <option value="domain" {% if type_filter == 'domain' %}selected{% endif %}>Domain</option>
+        <option value="design" {% if type_filter == 'design' %}selected{% endif %}>Design</option>
+        <option value="substrate" {% if type_filter == 'substrate' %}selected{% endif %}>Substrate</option>
+      </select>
+      <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
+        搜索
+      </button>
+    </form>
+
+    {% if result.hint %}
+    <p class="text-sm text-gray-500 mt-3">{{ result.hint }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Search Results -->
+  <div id="search-results">
+    {% include "partials/search_results.html" %}
+  </div>
+</div>
+{% endblock %}

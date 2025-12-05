@@ -1,0 +1,54 @@
+# Feature Definition: Frontend Component Library
+# Part of Frontend Infrastructure (L0: dom_frontend)
+# Validated against sub_meta_schema.yaml
+
+id: feat_frontend_component_library
+domain: dom_frontend
+source_anchor: "PRD.md#feat_frontend_component_library"
+intent: "提供前端组件库的完整生命周期管理：注册、设计、编码、验证。遵循 Spec-First 原则，组件 = MD文档(Truth) + HTML代码(Projection)，确保组件可发现、可复用、规范统一。"
+
+user_stories:
+  - "As an AI agent, I want to register a new component before coding, so that design comes before implementation."
+  - "As an AI agent, I want to query available components before creating new UI elements."
+  - "As a developer, I want to register new components via CLI (`devspec frontend register`)."
+  - "As a developer, I want to list all registered components and their status via CLI (`devspec frontend list`)."
+  - "As a developer, I want to validate MD-HTML consistency (`devspec frontend check`)."
+  - "As a developer, I want to see component usage statistics (`devspec frontend stats`)."
+
+workflow:
+  - step: 1
+    action: "Query component index before creating UI."
+    command: "devspec frontend list"
+    output: "List of available components with status and descriptions."
+  - step: 2
+    action: "If suitable component exists, reuse it via Jinja2 include."
+    output: "Component rendered in page."
+  - step: 3
+    action: "If no suitable component, register new component first."
+    command: "devspec frontend register <category> <name> --desc '描述'"
+    output: "MD design document created, component registered (status: registered)."
+  - step: 4
+    action: "Edit MD document to define params and style requirements."
+    output: "Complete design specification (Truth)."
+  - step: 5
+    action: "Implement HTML template following MD specification."
+    output: "HTML code created (Projection)."
+  - step: 6
+    action: "Run validation to ensure MD-HTML consistency."
+    command: "devspec frontend check"
+    output: "Validation report, component status becomes 'verified'."
+
+design_principles:
+  - name: "Spec-First"
+    desc: "组件 = MD文档(Truth) + HTML代码(Projection)。必须先注册（创建 MD）再编码（写 HTML）。"
+  - name: "Discoverability"
+    desc: "All components must be registered and queryable via CLI or API."
+  - name: "Self-Documenting"
+    desc: "Each component has MD design doc with description, params, style rules, and usage example."
+  - name: "Validation"
+    desc: "Components validated for MD-HTML consistency and sub_frontend_style.yaml compliance."
+  - name: "Usage Tracking"
+    desc: "Track component usage to identify high-value and unused components."
+
+realized_by:
+  - comp_frontend_component_library

@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}{{ node.name }} - Design - SpecGraph Viewer{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <!-- Header -->
+  <div class="bg-white rounded-lg shadow-md p-6 mb-6 border-l-4 border-blue-500">
+    <div class="flex items-center mb-2">
+      <span class="text-2xl mr-3">💡</span>
+      <h1 class="text-2xl font-bold text-gray-800">{{ node.name }}</h1>
+    </div>
+    <p class="text-gray-500">{{ node.id }}</p>
+    {% if node.intent %}
+    <p class="text-gray-700 mt-4">{{ node.intent }}</p>
+    {% endif %}
+  </div>
+
+  <!-- Content from YAML -->
+  <div class="space-y-4">
+    {% if content.rationale %}
+    <details open class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Rationale (设计原因)
+      </summary>
+      <div class="px-6 pb-4 text-gray-700 whitespace-pre-line">
+        {{ content.rationale }}
+      </div>
+    </details>
+    {% endif %}
+
+    {% if content.principles %}
+    <details open class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Principles (设计原则)
+      </summary>
+      <div class="px-6 pb-4">
+        <div class="space-y-3">
+          {% for principle in content.principles %}
+          <div class="border-l-4 border-blue-300 pl-4 py-2">
+            <div class="font-medium text-gray-800">{{ principle.name }}</div>
+            <div class="text-gray-600">{{ principle.desc }}</div>
+            {% if principle.why %}
+            <div class="text-sm text-gray-500 mt-1">为什么: {{ principle.why }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
+    {% if content.decisions %}
+    <details open class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Decisions (设计决策)
+      </summary>
+      <div class="px-6 pb-4">
+        <div class="space-y-3">
+          {% for decision in content.decisions %}
+          <div class="border-l-4 border-amber-300 pl-4 py-2">
+            <div class="font-medium text-gray-800">{{ decision.decision or decision.name }}</div>
+            {% if decision.reason %}
+            <div class="text-gray-600 whitespace-pre-line">{{ decision.reason }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </details>
+    {% endif %}
+
+    {% if node.description %}
+    <details class="bg-white rounded-lg shadow-md">
+      <summary class="cursor-pointer px-6 py-4 font-semibold text-gray-800 hover:bg-gray-50 rounded-t-lg">
+        Description
+      </summary>
+      <div class="px-6 pb-4 text-gray-700 whitespace-pre-line">
+        {{ node.description }}
+      </div>
+    </details>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

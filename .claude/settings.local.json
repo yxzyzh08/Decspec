@@ -7,7 +7,12 @@
       "Bash(uv run devspec --help:*)",
       "Bash(uv pip install:*)",
       "Bash(uv run devspec:*)",
-      "Bash(cat:*)"
+      "Bash(cat:*)",
+      "Bash(D:)",
+      "Bash(file:*)",
+      "Bash(xxd:*)",
+      "Bash(del \"d:\\github_projects\\Decspec\\.specgraph\\features\\feat_cli_visual_output.yaml\")",
+      "Bash(rm:*)"
     ],
     "deny": [],
     "ask": []

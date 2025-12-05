@@ -1,0 +1,14 @@
+{# Partial: Component list under a feature (htmx lazy-load) #}
+{% for component in components %}
+<div class="pl-4 border-l-2 border-green-300 py-1 ml-4 hover:bg-gray-50">
+  <a href="/hierarchy/node/component/{{ component.id }}" class="text-gray-700 hover:text-green-600 flex items-center">
+    <span class="text-green-500 mr-2">●</span>
+    <span>{{ component.name }}</span>
+  </a>
+  {% if component.file_path %}
+  <p class="text-xs text-gray-400 ml-6">{{ component.file_path }}</p>
+  {% endif %}
+</div>
+{% else %}
+<div class="ml-4 py-1 text-gray-500 text-sm">暂无 Component</div>
+{% endfor %}

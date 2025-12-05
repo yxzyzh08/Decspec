@@ -1,0 +1,50 @@
+# Design Definition: Frontend Design Principles
+# Type: Design (Why & What)
+# Purpose: 定义前端开发的设计原则和理念，适用于所有项目
+
+id: des_frontend_design
+type: design
+name: "Frontend Design Principles"
+domain: dom_frontend
+source_anchor: "PRD.md#des_frontend_design"
+intent: "定义前端开发的设计原则，确保界面风格统一、组件可复用、开发高效。适用于 DevSpec 管理的所有项目。"
+
+rationale: |
+  前端界面是用户与产品交互的窗口，需要保持一致的用户体验。
+  随着项目增加，如果没有统一的设计原则和组件库，容易出现：
+  - 风格碎片化：不同页面/项目风格不一致，用户体验割裂
+  - 重复造轮子：相似功能重复实现，浪费开发时间
+  - 维护困难：修改样式需要逐个文件修改，容易遗漏
+
+  通过建立通用的前端基础设施，可以：
+  - 保证所有项目的视觉一致性
+  - 提高开发效率（复用已有组件）
+  - 降低维护成本（修改一处，全局生效）
+  - 为未来项目提供开箱即用的前端能力
+
+principles:
+  - name: "Consistent Style"
+    desc: "所有界面必须遵守一致的视觉风格和交互模式"
+    why: "统一的风格能让用户形成使用习惯，降低认知负担"
+
+  - name: "Reuse First"
+    desc: "开发新功能前必须先查阅组件库，优先复用现有组件"
+    why: "避免重复造轮子，确保相同功能有相同的表现"
+
+  - name: "Component Registry"
+    desc: "新开发的组件必须注册到组件索引，供后续复用"
+    why: "组件只有被记录才能被发现和复用，否则会被遗忘"
+
+  - name: "Zero Build"
+    desc: "不使用前端构建工具，通过 CDN 加载 Tailwind CSS 和 htmx"
+    why: "保持技术栈极简，降低维护复杂度，符合 DevSpec 的 Minimal Tech Stack 原则"
+
+  - name: "Server-Side Rendering"
+    desc: "使用 Jinja2 模板进行服务端渲染，最小化客户端复杂度"
+    why: "减少前后端分离带来的复杂度，适合文档展示类应用"
+
+constraints:
+  - "所有页面必须使用 base.html 作为基础布局"
+  - "所有可复用的 UI 片段必须提取为组件"
+  - "新组件必须在 _index.yaml 中注册后才能使用"
+  - "禁止在页面模板中硬编码样式，必须使用 Tailwind 类"

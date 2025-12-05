@@ -1,0 +1,75 @@
+# Feature Definition: SpecView Design View
+# Part of SpecGraph Viewer (L0: dom_specview)
+# Validated against sub_meta_schema.yaml
+
+id: feat_specview_design_view
+domain: dom_specview
+source_anchor: "PRD.md#feat_specview_design_view"
+intent: "提供 Design 和 Substrate 节点的展示页面，使人类用户能够理解设计决策和执行约束。"
+
+user_stories:
+  - "As a human user, I want to see all Design nodes explaining 'why' decisions were made."
+  - "As a human user, I want to see all Substrate nodes explaining 'how' to execute."
+  - "As a human user, I want to clearly distinguish between Design (Why) and Substrate (How)."
+  - "As a human user, I want to read Markdown content with proper rendering."
+
+workflow:
+  - step: 1
+    action: "User navigates to design view."
+    output: "Page shows Design and Substrate sections with knowledge type guide."
+  - step: 2
+    action: "User clicks on a Design node."
+    output: "Detail panel shows rationale, principles, and constraints."
+  - step: 3
+    action: "User clicks on a Substrate node."
+    output: "Detail panel shows specific rules and examples."
+
+# 知识类型指引 - 帮助用户理解"何时阅读" (P2 改进)
+knowledge_type_guide:
+  - type: "Design (des_*)"
+    icon: "lightbulb"
+    color: "blue"
+    question: "为什么这样设计？"
+    when_to_read: "当你想理解决策背后的原因时"
+    example: "为什么用 Spec-First 而不是 Code-First？"
+    typical_content:
+      - "设计原则 (Design Principles)"
+      - "架构决策 (Architectural Decisions)"
+      - "权衡取舍 (Trade-offs)"
+  - type: "Substrate (sub_*)"
+    icon: "ruler"
+    color: "green"
+    question: "怎么执行？有什么约束？"
+    when_to_read: "当你要写代码或创建文件时"
+    example: "YAML 文件格式要求是什么？"
+    typical_content:
+      - "格式规范 (Format Specifications)"
+      - "命名约定 (Naming Conventions)"
+      - "验证规则 (Validation Rules)"
+      - "示例模板 (Example Templates)"
+
+# 页面布局
+page_layout:
+  sidebar:
+    - section: "Design Nodes"
+      icon: "lightbulb"
+      filter: "type=design"
+    - section: "Substrate Nodes"
+      icon: "ruler"
+      filter: "type=substrate"
+  main_content:
+    - knowledge_guide: true  # 页面顶部显示知识类型指引
+    - node_list_or_detail: true
+
+design_principles:
+  - name: "Knowledge Classification"
+    desc: "Clearly separate Design (Why) from Substrate (How)."
+  - name: "Markdown Rendering"
+    desc: "Support Markdown content with syntax highlighting."
+
+depends_on:
+  - feat_specview_dashboard_core
+
+realized_by:
+  - comp_specview_routes
+  - comp_specview_templates
