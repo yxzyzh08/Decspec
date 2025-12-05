@@ -5,7 +5,7 @@ id: des_specgraph_schema
 type: design
 name: "SpecGraph Database Schema"
 domain: dom_core
-source_anchor: "PRD.md#specgraph_database_schema"
+source_anchor: "PRD.md#des_specgraph_schema"
 intent: "Document the design decisions behind the SpecGraph database schema."
 
 # =============================================================================

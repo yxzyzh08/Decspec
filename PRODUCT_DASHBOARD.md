@@ -1,6 +1,6 @@
 # DevSpec Product Dashboard
 
-> **Generated At**: 2025-12-05 14:55:26
+> **Generated At**: 2025-12-05 15:26:22
 > **Phase**: 0 (Genesis Spec)
 
 ## Progress Overview
@@ -8,7 +8,7 @@
 | Dimension | Progress | Detail |
 | :--- | :--- | :--- |
 | **Schema Compliance** | `[####################]` 100% | 55/55 files |
-| **Spec Sync** | `[###################-]` 95% | 59/62 nodes |
+| **Spec Sync** | `[###################-]` 96% | 60/62 nodes |
 | **Feature Assignment** | `[####################]` 100% | 17/17 features |
 | **Overall** | `[###################-]` 98% | Weighted: Schema(30%) + Spec(30%) + Assignment(40%) |
 
@@ -87,7 +87,7 @@
 | `des_frontend_design` | Design | O Synced |
 | `des_knowledge_classification` | Design | O Synced |
 | `des_philosophy` | Design | O Synced |
-| `des_specgraph_schema` | Design | X YAML Only |
+| `des_specgraph_schema` | Design | O Synced |
 | `des_tech_strategy` | Design | O Synced |
 | `dom_cli` | Domain | O Synced |
 | `dom_core` | Domain | O Synced |

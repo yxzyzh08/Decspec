@@ -243,6 +243,8 @@ SpecGraph 中的知识分为两类：**Design (设计)** 和 **Substrate (基质
 *   **Graph Sync** <!-- id: comp_graph_sync -->: YAML → DB 同步引擎，支持增量更新与变更检测。
 *   **Graph Query** <!-- id: comp_graph_query -->: 图查询接口，支持节点查询、关系遍历、路径搜索。
 
+**Design**: SpecGraph Database Schema <!-- id: des_specgraph_schema --> - 数据库三表架构、ID 前缀命名规范、Content Hash 增量同步等设计决策。
+
 ### 3.5 Feature: Code Scanner <!-- id: feat_code_scanner -->
 
 基于 Tree-sitter 的代码分析与索引。
