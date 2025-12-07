@@ -108,6 +108,7 @@ class GraphQuery:
 
         # BFS traversal
         visited = {node_id}
+        visited_edges: set[tuple[str, str, str]] = set()  # (source, target, relation)
         queue = deque([(node_id, 0)])
 
         with self.db.get_session() as session:
@@ -122,7 +123,10 @@ class GraphQuery:
                 ).all()
 
                 for edge in out_edges:
-                    graph.edges.append(edge)
+                    edge_key = (edge.source_id, edge.target_id, edge.relation)
+                    if edge_key not in visited_edges:
+                        visited_edges.add(edge_key)
+                        graph.edges.append(edge)
                     if edge.target_id not in visited:
                         visited.add(edge.target_id)
                         target_node = session.get(NodeModel, edge.target_id)
@@ -136,7 +140,10 @@ class GraphQuery:
                 ).all()
 
                 for edge in in_edges:
-                    graph.edges.append(edge)
+                    edge_key = (edge.source_id, edge.target_id, edge.relation)
+                    if edge_key not in visited_edges:
+                        visited_edges.add(edge_key)
+                        graph.edges.append(edge)
                     if edge.source_id not in visited:
                         visited.add(edge.source_id)
                         source_node = session.get(NodeModel, edge.source_id)

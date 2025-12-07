@@ -225,7 +225,20 @@
 
 ### 4.6 Feature: Context Assembler <!-- id: feat_context_assembler -->
 
-为 AI 组装最小充分上下文。
+为 AI Agent 组装当前任务所需的最小充分上下文 (Minimal Sufficient Context)，防止 Token 浪费和注意力分散。
+
+**Core Functions (核心功能)**:
+*   **Phase 1 - Understanding**: 加载 Product Vision 和 Description。
+*   **Phase 2 - Locating**: 加载 Domain 列表和每个 Domain 下的 Feature 列表 (仅 ID/Name/Intent)。
+*   **Phase 3 - Evaluating**: 加载指定 Feature 的详细信息及其 Component 列表 (用于 Exhaustiveness Check)。
+*   **Phase 4 - Planning**: 加载相关节点的依赖关系图。
+*   **Phase 5 - Coding**: 加载 Component 详细设计和 Substrate 约束。
+
+**CLI Command**: `devspec context <phase> [--focus <node_id>]`
+
+**Components**:
+*   **Context Assembler** <!-- id: comp_context_assembler -->: 上下文组装核心逻辑，根据任务阶段和关注节点，利用 GraphQuery 组装 Markdown 格式的上下文。
+*   **CLI Context Command** <!-- id: comp_cli_context -->: `devspec context` 命令实现，为 AI Agent 输出指定 Phase 的 Markdown 上下文。
 
 ### 4.7 Feature: Requirement Collector <!-- id: feat_requirement_collector -->
 
