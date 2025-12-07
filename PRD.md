@@ -18,6 +18,11 @@
 > DevSpec 是一个严格的 **Specification Management System** (规范管理系统) 与 **CLI Orchestration Layer** (命令行编排层)。
 > 它面向 AI 辅助编程场景 (Claude CLI, Gemini CLI 等)，强制执行 **"Spec-First"** (文档优先) 工作流，并通过自动化的 **Consistency Checks** (一致性检查) 机制，确保代码实现对文档设计的绝对忠实 (Fidelity)，防止 AI 生成的代码随时间推移发生漂移 (Drift)。
 
+**Architectural Constraint (架构约束)**: DevSpec 坚持 **"Passive Oracle"** (被动神谕) 模式：
+*   **不做手术 (No Surgery)**: 严禁修改用户代码文件、严禁执行 Git Commit/Checkout 等写操作。
+*   **只拍片子 (X-Ray Only)**: 负责扫描代码、验证 YAML、组装 Context、生成 Prompt。
+*   **AI 代理权 (AI Agency)**: 所有文件写入、代码修改、版本控制操作，均由 AI Agent 在接收 DevSpec 建议后，通过其自身工具能力执行。
+
 ### 1.3 Recursive Bootstrapping (Engineering Standard)
 
 核心特性在于其 **Recursive Bootstrapping** (递归自举) 能力：
@@ -48,10 +53,13 @@
 
 ### 2.4 Safety Principles <!-- id: des_safety -->
 
-**Git-Based Ratcheting (基于 Git 的棘轮机制)**: 系统进化像棘轮一样单向锁定。
+**Passive Sensing (被动感知)**: 基于 "Passive Oracle" 架构约束，DevSpec 仅读取 Git 状态，不执行任何 Git 写操作。
 
-*   **Genesis Kernel**: 只有经过验证的、能成功编译自身的版本，才能被 Tag 为基准版本 (如 `v0.1.0-genesis`)。
-*   **Rollback Protocol**: 当进化失败（如生成的代码导致 CLI 崩溃）时，通过 `git checkout` 回退到上一个 Genesis Tag，而不是原地修补。
+*   **Git Status Reader**: DevSpec 读取 Git Hash、Dirty 状态、当前 Branch，用于环境感知。
+*   **Alert Mechanism**: 当检测到环境处于"非洁净"或"非基准"状态时，在 Dashboard 和 Context 中发出警告 (Alert)。
+*   **Human/AI Agency**: 回滚操作由人类或 AI Agent 手动执行，DevSpec 仅提供建议，不越俎代庖。
+
+**Genesis Kernel (基准版本)**: 只有经过验证的、能成功编译自身的版本，才能被 Tag 为基准版本 (如 `v0.1.0-genesis`)。此 Tag 由人类或 AI 执行，DevSpec 仅提供验证能力。
 
 ### 2.5 Meta-Knowledge Classification (元知识分类) <!-- id: des_knowledge_classification -->
 
@@ -60,7 +68,7 @@
 | 分类 | 定义 | 适用范围 | 典型节点示例 |
 | :--- | :--- | :--- | :--- |
 | **Design** | 意图与决策 (Why & What) — 理解目标，对齐背景。 | 架构设计、产品愿景、领域划分 | `des_philosophy` (核心理念)、`des_architecture` (分层架构) |
-| **Substrate** | 约束与规范 (How & Rules) — 无论生成何种产物，必须强制遵守的硬性规则。 | Documentation (PRD 格式)、Data (YAML 结构)、Code (代码风格) | `sub_meta_schema` (YAML 校验规则)、`sub_tech_stack` (技术栈约束)、`sub_frontend_style` (前端规范) |
+| **Substrate** | 约束与规范 (How & Rules) — 无论生成何种产物，必须强制遵守的硬性规则。 | Documentation (PRD 格式)、Data (YAML 结构)、Code (代码风格) | `sub_meta_schema` (YAML 校验规则)、`sub_tech_stack` (技术栈约束)、`sub_frontend_style` (前端规范)、`sub_coding_style.yaml` (代码规范) |
 
 ---
 
@@ -68,14 +76,14 @@
 
 ### 3.1 Domain Model (L0) <!-- id: des_domain_model -->
 
-系统被划分为六大有界上下文 (Bounded Contexts)：
+系统被划分为六大有界上下文 (Bounded Contexts)，遵循 **"监察分离"** 原则：
 
-*   **Core Engine (`dom_core`)**: 大脑。负责维护知识图谱、解析代码、管理上下文。
-*   **CLI Interface (`dom_cli`)**: AI 接口。为 AI Agent 提供命令行工具，将 Intent 转化为 Action。
-*   **SpecGraph Viewer (`dom_specview`)**: 人类窗口。提供 Web 界面展示知识库。
-*   **Frontend Infrastructure (`dom_frontend`)**: UI 工具包。提供零构建的前端规范与组件库。
-*   **Quality Assurance (`dom_quality`)**: 免疫系统。确保代码与 Spec 的一致性。
-*   **Infrastructure (`dom_infra`)**: 血液循环。提供日志、配置、错误处理等基础能力。
+*   **Core Engine (`dom_core`)**: **Builder (构建者)**。专注构建：解析代码、维护图谱、组装上下文。
+*   **CLI Interface (`dom_cli`)**: **AI 接口**。为 AI Agent 提供命令行工具，输出 Context 和建议。
+*   **SpecGraph Viewer (`dom_specview`)**: **人类窗口**。提供 Web 界面展示知识库 (只读)。
+*   **Frontend Infrastructure (`dom_frontend`)**: **UI 工具包**。提供零构建的前端规范与组件库。
+*   **Quality Assurance (`dom_quality`)**: **Inspector (检查者)**。专注验证：对比 Spec 与 Code，通过 Dashboard 报告问题。
+*   **Infrastructure (`dom_infra`)**: **Support (支撑者)**。提供日志、配置、Git Status Reader (只读感知器)。移除所有写操作能力。
 
 ### 3.2 SpecGraph Data Specification <!-- id: des_architecture -->
 

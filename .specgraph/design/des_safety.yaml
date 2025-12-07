@@ -1,35 +1,42 @@
 # Design Node: Safety Principles
-# Defines the Git-based ratcheting mechanism for safe evolution
+# Defines the Passive Sensing mechanism for safe environment awareness
 
 id: des_safety
 type: design
 name: "Safety Principles"
 source_anchor: "PRD.md#des_safety"
-intent: "定义基于 Git 的棘轮机制，确保系统进化的安全性和可回滚性。"
+intent: "定义基于被动感知的安全机制，确保 DevSpec 仅读取状态、提供警告，不执行任何写操作。"
 
 rationale: |
-  自举系统 (Self-Bootstrapping System) 面临特殊风险：
-  - 生成的代码可能破坏工具自身
-  - 错误可能级联放大
-  - 需要可靠的回滚机制
+  基于 "Passive Oracle" 架构约束，DevSpec 的安全机制从"主动执行"转变为"被动感知"：
 
-  Git 天然提供了版本控制和回滚能力，将其建模为"棘轮"可以确保：
-  - 只有验证通过的版本才能成为基准
-  - 失败时可以安全回退
-  - 进化过程有迹可循
+  旧模式 (Active Worker):
+  - DevSpec 执行 git checkout 回滚
+  - DevSpec 修改文件
+  - 风险：工具越俎代庖，AI 失去代码变更的完整认知
+
+  新模式 (Passive Oracle):
+  - DevSpec 只读取 Git 状态
+  - DevSpec 只报告警告和建议
+  - AI/人类执行实际操作
+  - 优势：AI 拥有完全的代理权，降低系统复杂度
 
 principles:
-  - name: "Git-Based Ratcheting"
-    desc: "系统进化像棘轮一样单向锁定，只有验证通过才能前进。"
-    why: "防止自举过程中的级联失败，确保总有可用的回退点。"
+  - name: "Passive Sensing"
+    desc: "DevSpec 仅读取 Git 状态 (Hash/Dirty/Branch)，不执行任何 Git 写操作。"
+    why: "保持 Passive Oracle 架构约束，确保 AI 对代码变更拥有完全认知。"
+
+  - name: "Alert Mechanism"
+    desc: "当检测到环境异常时，在 Dashboard 和 Context 中发出警告，提示人类或 AI 处理。"
+    why: "通过警告引导行为，而不是强制执行，尊重 AI 代理权。"
+
+  - name: "Human/AI Agency"
+    desc: "回滚、提交等版本控制操作由人类或 AI Agent 手动执行，DevSpec 仅提供建议。"
+    why: "遵循 'No Surgery' 原则，DevSpec 不越俎代庖。"
 
   - name: "Genesis Kernel"
     desc: "只有经过验证的、能成功编译自身的版本，才能被 Tag 为基准版本。"
-    why: "确保基准版本的可靠性，为回滚提供安全锚点。"
-
-  - name: "Rollback Protocol"
-    desc: "当进化失败时，通过 git checkout 回退到上一个 Genesis Tag，而不是原地修补。"
-    why: "原地修补可能引入更多问题，干净回滚更安全。"
+    why: "确保基准版本的可靠性，为回滚提供安全锚点。此 Tag 由人类或 AI 执行。"
 
 verification_criteria:
   - criterion: "CLI 可启动"
@@ -47,4 +54,16 @@ verification_criteria:
 tag_convention:
   format: "v{major}.{minor}.{patch}-genesis"
   example: "v0.1.0-genesis"
-  desc: "Genesis 标签表示经过验证的安全回退点"
+  desc: "Genesis 标签表示经过验证的安全回退点，由人类或 AI 执行 git tag"
+
+git_status_reader:
+  capabilities:
+    - "读取当前 commit hash"
+    - "检测工作区是否 dirty"
+    - "获取当前 branch 名称"
+    - "检查是否处于 genesis tag"
+  outputs:
+    - type: "Dashboard Alert"
+      desc: "在 PRODUCT_DASHBOARD.md 中显示环境状态警告"
+    - type: "Context Warning"
+      desc: "在 Context 输出中包含环境状态信息"

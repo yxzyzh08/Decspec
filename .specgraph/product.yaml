@@ -23,7 +23,7 @@ vision: |
 domains:
   - id: dom_core
     name: "Core Engine"
-    description: "系统的'大脑'，负责维护知识图谱、解析代码、管理上下文。"
+    description: "系统的 Builder (构建者)，专注构建：解析代码、维护图谱、组装上下文。"
     exports:
       - name: "query_graph"
         signature: "query_graph(query: GraphQuery) -> List[Node]"
@@ -37,7 +37,7 @@ domains:
 
   - id: dom_cli
     name: "CLI Interface"
-    description: "系统的'AI 接口'，为 AI Agent (Claude Code, Gemini CLI) 提供命令行工具，支持 AI 开发产品需求。"
+    description: "系统的 AI 接口，为 AI Agent 提供命令行工具，输出 Context 和建议。"
     exports:
       - name: "run_command"
         signature: "run_command(cmd: str, args: List[str]) -> int"
@@ -45,10 +45,7 @@ domains:
 
   - id: dom_specview
     name: "SpecGraph Viewer"
-    description: |
-      系统的'人类窗口'，为人类用户提供 Web 界面展示 SpecGraph 知识库。
-      设计原则：Read-Only (只读), Progressive Disclosure (渐进式披露),
-      Spatial Consistency (空间一致性), Guided Exploration (引导式探索)。
+    description: "系统的人类窗口，提供 Web 界面展示知识库 (只读)。"
     exports:
       - name: "serve"
         signature: "serve(port: int = 8000) -> None"
@@ -85,7 +82,7 @@ domains:
 
   - id: dom_quality
     name: "Quality Assurance"
-    description: "系统的'免疫系统'，负责确保代码与 Spec 的一致性。"
+    description: "系统的 Inspector (检查者)，专注验证：对比 Spec 与 Code，通过 Dashboard 报告问题。"
     exports:
       - name: "check_consistency"
         signature: "check_consistency() -> ConsistencyReport"
@@ -93,7 +90,7 @@ domains:
 
   - id: dom_infra
     name: "Infrastructure"
-    description: "系统的'血液循环'，提供日志、配置、错误处理等横切基础设施能力。"
+    description: "系统的 Support (支撑者)，提供日志、配置、Git Status Reader (只读感知器)。移除所有写操作能力。"
     exports:
       - name: "get_logger"
         signature: "get_logger(name: str) -> Logger"
