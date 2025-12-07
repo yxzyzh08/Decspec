@@ -1,52 +1,66 @@
-# Design Definition: Knowledge Classification
+# Design Definition: Meta-Knowledge Classification
 # Type: Design (Why & What)
-# Purpose: 解释 Design 和 Substrate 的区分决策
+# Purpose: 定义 Design 和 Substrate 两类元知识的严格边界
 
 id: des_knowledge_classification
 type: design
-name: "Knowledge Classification"
+name: "Meta-Knowledge Classification"
 source_anchor: "PRD.md#des_knowledge_classification"
 
-intent: "明确 SpecGraph 中 Design 和 Substrate 两类知识的边界，指导 AI 在不同场景下加载正确的上下文。"
+intent: "为支持 AI 的决策与执行，将非实体类的参考知识严格划分为 Design 和 Substrate 两类。"
 
 rationale: |
   为什么要区分 Design 和 Substrate？
-  1. **职责分离**: Design 解释"为什么"，Substrate 定义"怎么做"。
-  2. **加载效率**: AI 不需要在每个任务中加载所有知识，按需加载。
-  3. **维护清晰**: 修改设计决策不影响执行约束，反之亦然。
-  4. **团队协作**: 架构师关注 Design，开发者关注 Substrate。
+  1. **职责分离**: Design 解释"为什么"，Substrate 强制"怎么做"。
+  2. **加载效率**: AI 根据任务类型按需加载，避免上下文过载。
+  3. **规则刚性**: Substrate 是硬性规则，无论生成何种产物都必须遵守。
+  4. **维护清晰**: 修改设计决策不影响执行约束，反之亦然。
 
 classification:
   design:
-    definition: "设计决策 (Why & What)"
-    answers: "为什么这样设计？目标是什么？"
+    definition: "意图与决策 (Why & What) — 理解目标，对齐背景。"
+    scope:
+      - "架构设计"
+      - "产品愿景"
+      - "领域划分"
     ai_load_when:
       - "理解项目背景"
       - "做架构决策"
       - "设计新的 Feature"
     location: ".specgraph/design/"
     examples:
-      - "des_philosophy - 核心理念的设计决策"
-      - "des_architecture - 分层架构的目的"
-      - "des_domain_model - 领域划分的思路"
+      - id: "des_philosophy"
+        desc: "核心理念 (Spec-First, Serial Flow)"
+      - id: "des_architecture"
+        desc: "分层架构 (L0-L3 抽象层级)"
+      - id: "des_domain_model"
+        desc: "领域划分的设计思路"
 
   substrate:
-    definition: "执行约束 (How & Constraints)"
-    answers: "怎么执行？有什么约束？"
+    definition: "约束与规范 (How & Rules) — 无论生成何种产物，必须强制遵守的硬性规则。"
+    scope:
+      - "Documentation (PRD 格式)"
+      - "Data (YAML 结构)"
+      - "Code (代码风格)"
     ai_load_when:
-      - "编写代码"
-      - "创建/验证 YAML 文件"
-      - "审查代码合规性"
+      - "编写代码 → sub_tech_stack + sub_coding_style"
+      - "创建/验证 YAML 文件 → sub_meta_schema"
+      - "编写前端代码 → sub_frontend_style"
     location: ".specgraph/substrate/"
     examples:
-      - "sub_tech_stack - 技术栈约束"
-      - "sub_meta_schema - YAML 结构验证规则"
-      - "sub_coding_style - 编码规范"
+      - id: "sub_meta_schema"
+        desc: "YAML 校验规则 (必填字段、命名规范)"
+      - id: "sub_tech_stack"
+        desc: "技术栈约束 (typer not click, pathlib not os.path)"
+      - id: "sub_coding_style"
+        desc: "编码规范 (Type Hints, 命名规则)"
+      - id: "sub_frontend_style"
+        desc: "前端规范 (Tailwind CSS, 组件库结构)"
 
 principles:
   - name: "Separation of Concerns"
     desc: "Design 和 Substrate 各司其职，不混淆。"
   - name: "Load on Demand"
     desc: "AI 根据任务类型加载对应的知识，不过度加载。"
-  - name: "Single Source of Truth"
-    desc: "每类知识只在一处定义，避免重复和冲突。"
+  - name: "Mandatory Compliance"
+    desc: "Substrate 是硬性规则，所有产物必须遵守，无例外。"

@@ -53,14 +53,14 @@
 *   **Genesis Kernel**: 只有经过验证的、能成功编译自身的版本，才能被 Tag 为基准版本 (如 `v0.1.0-genesis`)。
 *   **Rollback Protocol**: 当进化失败（如生成的代码导致 CLI 崩溃）时，通过 `git checkout` 回退到上一个 Genesis Tag，而不是原地修补。
 
-### 2.5 Knowledge Organization <!-- id: des_knowledge_classification -->
+### 2.5 Meta-Knowledge Classification (元知识分类) <!-- id: des_knowledge_classification -->
 
-SpecGraph 中的知识分为两类：
+为了支持 AI 的决策与执行，我们将非实体类的参考知识严格划分为两类：
 
-| 分类 | 定义 | 回答的问题 |
-| :--- | :--- | :--- |
-| **Design** | 设计决策 (Why & What) | 为什么这样设计？目标是什么？ |
-| **Substrate** | 执行约束 (How & Constraints) | 怎么执行？有什么约束？ |
+| 分类 | 定义 | 适用范围 | 典型节点示例 |
+| :--- | :--- | :--- | :--- |
+| **Design** | 意图与决策 (Why & What) — 理解目标，对齐背景。 | 架构设计、产品愿景、领域划分 | `des_philosophy` (核心理念)、`des_architecture` (分层架构) |
+| **Substrate** | 约束与规范 (How & Rules) — 无论生成何种产物，必须强制遵守的硬性规则。 | Documentation (PRD 格式)、Data (YAML 结构)、Code (代码风格) | `sub_meta_schema` (YAML 校验规则)、`sub_tech_stack` (技术栈约束)、`sub_frontend_style` (前端规范) |
 
 ---
 
