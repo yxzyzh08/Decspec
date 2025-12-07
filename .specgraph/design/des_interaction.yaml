@@ -1,0 +1,46 @@
+# Design Node: Interaction Principles
+# Defines the structured dialogue protocol between AI and human
+
+id: des_interaction
+type: design
+name: "Interaction Principles"
+source_anchor: "PRD.md#des_interaction"
+intent: "定义 AI 与人类之间的结构化对话协议，确保交互过程可预测、可追踪。"
+
+rationale: |
+  在 AI 辅助编程场景中，对话质量直接影响产出质量。
+  无结构的对话容易导致：
+  - 需求理解偏差
+  - 执行计划不明确
+  - 人类认知过载
+
+  因此需要将对话建模为状态机，每个状态有明确的输入、输出和确认点。
+
+principles:
+  - name: "Structured Dialogue"
+    desc: "对话是状态机的流转。AI 必须严格遵守交互协议。"
+    why: "状态机模型使对话过程可预测、可追踪，减少沟通成本。"
+
+  - name: "Context Minimalism"
+    desc: "针对人类有限的认知带宽，AI 提供的输出必须经过降噪。"
+    why: "人类工作记忆容量有限 (7±2)，过多信息会导致认知过载。"
+
+dialogue_protocol:
+  phases:
+    - phase: 1
+      name: "Receive"
+      desc: "接收用户原始需求"
+    - phase: 2
+      name: "Confirm Understanding"
+      desc: "用自己的话复述需求，请求用户确认"
+      confirmation_required: true
+    - phase: 3
+      name: "Plan"
+      desc: "生成执行计划，包括 Spec 变更和代码变更"
+    - phase: 4
+      name: "Confirm Plan"
+      desc: "向用户展示计划，请求确认"
+      confirmation_required: true
+    - phase: 5
+      name: "Execute"
+      desc: "按计划执行，完成后报告结果"

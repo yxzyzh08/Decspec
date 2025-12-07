@@ -1,16 +1,16 @@
 # DevSpec Product Dashboard
 
-> **Generated At**: 2025-12-07 10:03:45
+> **Generated At**: 2025-12-07 11:25:24
 > **Phase**: 0 (Genesis Spec)
 
 ## Progress Overview
 
 | Dimension | Progress | Detail |
 | :--- | :--- | :--- |
-| **Schema Compliance** | `[####################]` 100% | 55/55 files |
-| **Spec Sync** | `[###################-]` 96% | 60/62 nodes |
+| **Schema Compliance** | `[####################]` 100% | 57/57 files |
+| **Spec Sync** | `[##################--]` 92% | 59/64 nodes |
 | **Feature Assignment** | `[####################]` 100% | 17/17 features |
-| **Overall** | `[###################-]` 98% | Weighted: Schema(30%) + Spec(30%) + Assignment(40%) |
+| **Overall** | `[###################-]` 97% | Weighted: Schema(30%) + Spec(30%) + Assignment(40%) |
 
 ---
 
@@ -49,8 +49,10 @@
 | `.specgraph\design\des_documentation.yaml` | design | O Valid | - |
 | `.specgraph\design\des_domain_model.yaml` | design | O Valid | - |
 | `.specgraph\design\des_frontend_design.yaml` | design | O Valid | - |
+| `.specgraph\design\des_interaction.yaml` | design | O Valid | - |
 | `.specgraph\design\des_knowledge_classification.yaml` | design | O Valid | - |
 | `.specgraph\design\des_philosophy.yaml` | design | O Valid | - |
+| `.specgraph\design\des_safety.yaml` | design | O Valid | - |
 | `.specgraph\design\des_specgraph_schema.yaml` | design | O Valid | - |
 | `.specgraph\design\des_tech_strategy.yaml` | design | O Valid | - |
 | `.specgraph\features\feat_cli_command_structure.yaml` | feature | O Valid | - |
@@ -81,14 +83,16 @@
 | Node ID | Type | Spec Status |
 | :--- | :--- | :--- |
 | `des_architecture` | Design | O Synced |
-| `des_bootstrap_strategy` | Design | O Synced |
+| `des_bootstrap_strategy` | Design | X YAML Only |
 | `des_documentation` | Design | O Synced |
 | `des_domain_model` | Design | O Synced |
 | `des_frontend_design` | Design | O Synced |
+| `des_interaction` | Design | O Synced |
 | `des_knowledge_classification` | Design | O Synced |
 | `des_philosophy` | Design | O Synced |
+| `des_safety` | Design | O Synced |
 | `des_specgraph_schema` | Design | O Synced |
-| `des_tech_strategy` | Design | O Synced |
+| `des_tech_strategy` | Design | X YAML Only |
 | `dom_cli` | Domain | O Synced |
 | `dom_core` | Domain | O Synced |
 | `dom_frontend` | Domain | O Synced |
@@ -96,7 +100,7 @@
 | `dom_quality` | Domain | O Synced |
 | `dom_specview` | Domain | O Synced |
 | `prod_devspec` | Product | O Synced |
-| `sub_coding_style` | Substrate | O Synced |
+| `sub_coding_style` | Substrate | X YAML Only |
 | `sub_frontend_style` | Substrate | O Synced |
 | `sub_meta_schema` | Substrate | O Synced |
 | `sub_tech_stack` | Substrate | O Synced |
