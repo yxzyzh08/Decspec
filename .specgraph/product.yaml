@@ -7,11 +7,16 @@ name: "DevSpec"
 version: "0.3.0"
 
 # Product Vision - 用于需求分析 Step 2: 判断是否符合 Vision
-description: "A self-evolving, serial conversational intelligent pair-programming environment."
+description: |
+  DevSpec 是一个严格的 **Specification Management System** (规范管理系统) 与 **CLI Orchestration Layer** (命令行编排层)。
+  它面向 AI 辅助编程场景 (Claude CLI, Gemini CLI 等)，强制执行 **"Spec-First"** (文档优先) 工作流，并通过自动化的 **Consistency Checks** (一致性检查) 机制，确保代码实现对文档设计的绝对忠实 (Fidelity)，防止 AI 生成的代码随时间推移发生漂移 (Drift)。
+  核心特性在于其 **Recursive Bootstrapping** (递归自举) 能力:它将自身的源码作为第一个管理对象，利用自身的上下文组装 (Context Assembly) 与代码分析 (Code Scanning) 能力，驱动 AI 完成工具自身的迭代与升级，实现开发环境的自我闭环
 vision: |
   DevSpec 是专为 "Super Individuals" (超级个体) 设计的串行会话式智能结对编程环境。
   它不仅是开发业务软件的工具，更是一个自我进化的生命体 (Self-Evolving Life Form)。
   核心理念：Spec First (文档是唯一事实来源), Serial Flow (专注单任务), Recursive Evolution (工具由工具自身构建)。
+
+
 
 # Domain 概要 (L0 Level) - 用于需求分析 Step 3: 分析涉及的 Domain
 # 注意：不包含 features 列表，Domain → Feature 关系通过 Feature.domain 字段建立

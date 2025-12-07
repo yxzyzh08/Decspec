@@ -11,6 +11,13 @@
 **DevSpec** 是专为 "Super Individuals" (超级个体) 设计的 **Serial Conversational Intelligent Pair-Programming Environment** (串行会话式智能结对编程环境)。
 它不仅是开发业务软件的工具，更是一个 **Self-Evolving Life Form** (自我进化的生命体) —— 由自己构建，随使用者习惯不断迭代。
 
+**Precise Definition (精确定义)**:
+
+> DevSpec 是一个严格的 **Specification Management System** (规范管理系统) 与 **CLI Orchestration Layer** (命令行编排层)。
+> 它面向 AI 辅助编程场景 (Claude CLI, Gemini CLI 等)，强制执行 **"Spec-First"** (文档优先) 工作流，并通过自动化的 **Consistency Checks** (一致性检查) 机制，确保代码实现对文档设计的绝对忠实 (Fidelity)，防止 AI 生成的代码随时间推移发生漂移 (Drift)。
+> 核心特性在于其 **Recursive Bootstrapping** (递归自举) 能力：
+它将自身的源码作为第一个管理对象，利用自身的上下文组装 (Context Assembly) 与代码分析 (Code Scanning) 能力，驱动 AI 完成工具自身的迭代与升级，实现开发环境的自我闭环
+
 ---
 
 ## 2. Design Principles
@@ -84,6 +91,21 @@
 | **Substrate** | `.specgraph/substrate/sub_{name}.yaml` | 基质节点，定义执行约束 (How & Constraints) |
 
 **AI 必须在创建/修改 YAML 文件前加载 `sub_meta_schema.yaml` 以确保格式正确。**
+
+**ID Assignment Principle (ID 分配原则)**:
+
+只有满足以下条件之一的内容才需要独立 ID (锚点)：
+
+| 条件 | 说明 | 示例 |
+| :--- | :--- | :--- |
+| **可被引用** | 其他节点需要通过 `depends_on`、`realized_by` 等关系引用它 | `feat_logging` 被 `comp_logger_factory` 引用 |
+| **独立验收** | 可作为独立单元被验收或追踪 | `feat_cli_command_structure` 是可独立交付的功能 |
+| **独立演进** | 有自己的生命周期，可能独立于父节点变更 | `des_philosophy` 是独立的设计决策 |
+
+如果内容是对现有节点的**补充说明**或**属性扩展**，则属于该节点的一部分，**不需要独立 ID**。
+
+*   ✅ `prod_devspec` 的 "Precise Definition" — 是产品定义的补充，属于 Product 节点
+*   ❌ 错误做法：为每个段落都创建 `des_*` ID
 
 ### 2.4 Bootstrapping Strategy <!-- id: des_bootstrap_strategy -->
 
